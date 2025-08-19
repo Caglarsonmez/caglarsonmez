@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maldeviren</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    table {
+      margin: auto;
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 450px;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 8px;
+      text-align: center;
+    }
+    input[type="number"], input[type="text"] {
+      width: 90%;
+      padding: 5px;
+      text-align: center;
+      font-size: 1em;
+    }
+    .total {
+      font-weight: bold;
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Maldeviren</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>takımlar</th>
+        <th><input type="text" id="team1Name" placeholder="Team 1"></th>
+        <th><input type="text" id="team2Name" placeholder="Team 2"></th>
+      </tr>
+    </thead>
+    <tbody>
+	  <tr>
+        <td>3lü Küt</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>3lü sıra</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>2 3lü küt</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>2 3lü sıra</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>3lü küt ve 3 sira</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>4lü küt</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>4lü sıra</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>2 4lü küt</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>2 4lü sıra</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>4 küt ve 4 sira</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>5li sıra</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>5li sıra ve 3 küt</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>5li sıra ve 4lü küt</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>çift</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>
+      <tr>
+        <td>elden bit</td>
+        <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
+        <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
+      </tr>	 	  
+    </tbody>
+    <tfoot>
+      <tr class="total">
+        <td>Total</td>
+        <td id="team1Total">0</td>
+        <td id="team2Total">0</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <script>
+    function updateTotals() {
+      let team1Total = 0;
+      let team2Total = 0;
+
+      document.querySelectorAll(".team1").forEach(input => {
+        team1Total += Number(input.value) || 0;
+      });
+      document.querySelectorAll(".team2").forEach(input => {
+        team2Total += Number(input.value) || 0;
+      });
+
+      document.getElementById("team1Total").textContent = team1Total;
+      document.getElementById("team2Total").textContent = team2Total;
+    }
+  </script>
+</body>
+</html>
