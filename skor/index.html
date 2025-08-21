@@ -3,8 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&family=Press+Start+2P&family=Shadows+Into+Light&display=swap" rel="stylesheet">
+
   <title>Maldeviren</title>
   <style>
+    h1 {
+       font-family: 'Press Start 2P', cursive; 
+	}
+	table, td, th, input, button {
+       font-family: 'Montserrat', sans-serif; 
+    }
+
+    td:first-child {
+       font-family: 'Montserrat', cursive; 
+    }
+
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
@@ -31,6 +44,22 @@
       font-weight: bold;
       background: #f0f0f0;
     }
+	body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  text-align: center;
+  background: url("jpeg.jpeg") no-repeat center center fixed;
+  background-size: cover;
+	}
+	body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.7); /* whitish veil */
+  z-index: -1;
+	}
+
+
   </style>
 </head>
 <body>
@@ -119,7 +148,19 @@
         <td>elden bit</td>
         <td><input type="number" min="0" max="9999" class="team1" oninput="updateTotals()"></td>
         <td><input type="number" min="0" max="9999" class="team2" oninput="updateTotals()"></td>
-      </tr>	 	  
+      </tr>
+	  <tr>
+  <td>ceza</td>
+  <td>
+    <span id="team1Penalty">0</span>
+    <button onclick="addPenalty('team1')">-50</button>
+  </td>
+  <td>
+    <span id="team2Penalty">0</span>
+    <button onclick="addPenalty('team2')">-50</button>
+  </td>
+      </tr>
+
     </tbody>
     <tfoot>
       <tr class="total">
@@ -146,5 +187,40 @@
       document.getElementById("team2Total").textContent = team2Total;
     }
   </script>
+  <script>
+  let team1Penalty = 0;
+  let team2Penalty = 0;
+
+  function addPenalty(team) {
+    if (team === 'team1') {
+      team1Penalty -= 50;
+      document.getElementById("team1Penalty").textContent = team1Penalty;
+    } else {
+      team2Penalty -= 50;
+      document.getElementById("team2Penalty").textContent = team2Penalty;
+    }
+    updateTotals();
+  }
+
+  function updateTotals() {
+    let team1Total = 0;
+    let team2Total = 0;
+
+    document.querySelectorAll(".team1").forEach(input => {
+      team1Total += Number(input.value) || 0;
+    });
+    document.querySelectorAll(".team2").forEach(input => {
+      team2Total += Number(input.value) || 0;
+    });
+
+    // include penalties
+    team1Total += team1Penalty;
+    team2Total += team2Penalty;
+
+    document.getElementById("team1Total").textContent = team1Total;
+    document.getElementById("team2Total").textContent = team2Total;
+  }
+</script>
+
 </body>
 </html>
