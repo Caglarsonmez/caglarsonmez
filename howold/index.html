@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HowOld — Celebrity Ages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F7F4EE; --ink: #1A1410; --muted: #8C7B6B;
+    --accent: #C4533A; --accent2: #3A6BC4;
+    --surface: #FFFFFF; --border: #E0D8CC; --shadow: rgba(26,20,16,0.08);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 0 16px 48px; }
+  .hero { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 620px; margin-top: 80px; transition: margin-top 0.4s cubic-bezier(0.34,1.2,0.64,1); }
+  .hero.shifted { margin-top: 32px; }
+  .wordmark { font-family: 'Playfair Display', serif; font-size: clamp(2.8rem, 9vw, 5rem); font-weight: 700; letter-spacing: -0.03em; color: var(--ink); line-height: 1; margin-bottom: 8px; }
+  .wordmark span { color: var(--accent); font-style: italic; }
+  .tagline { font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 40px; }
+  .search-wrap { width: 100%; position: relative; }
+  .search-box { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 52px; padding: 13px 20px 13px 22px; box-shadow: 0 2px 14px var(--shadow); transition: border-color 0.2s, box-shadow 0.2s; }
+  .search-box:focus-within { border-color: var(--accent); box-shadow: 0 4px 24px var(--shadow), 0 0 0 3px rgba(196,83,58,0.1); }
+  .ico { color: var(--muted); flex-shrink: 0; transition: color 0.2s; }
+  .search-box:focus-within .ico { color: var(--accent); }
+  #qinput { flex: 1; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 1rem; color: var(--ink); background: transparent; caret-color: var(--accent); }
+  #qinput::placeholder { color: var(--muted); font-weight: 300; }
+  .clr { background: none; border: none; cursor: pointer; color: var(--muted); padding: 3px; border-radius: 50%; display: none; align-items: center; justify-content: center; transition: color 0.15s, background 0.15s; }
+  .clr:hover { color: var(--accent); background: rgba(196,83,58,0.08); }
+  .clr.on { display: flex; }
+  .dropdown { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--surface); border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 30px var(--shadow); display: none; z-index: 100; }
+  .dropdown.on { display: block; }
+  .dd-item { display: flex; align-items: center; gap: 12px; padding: 11px 20px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; }
+  .dd-item:last-child { border-bottom: none; }
+  .dd-item:hover, .dd-item.hi { background: #FAF7F2; }
+  .dd-av { width: 34px; height: 34px; border-radius: 50%; background: #EAF0F9; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--accent2); flex-shrink: 0; overflow: hidden; }
+  .dd-av img { width: 100%; height: 100%; object-fit: cover; }
+  .dd-name { flex: 1; font-size: 0.93rem; color: var(--ink); }
+  .dd-name em { font-style: normal; color: var(--accent); font-weight: 500; }
+  .dd-desc { font-size: 0.75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .dd-badge { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 99px; background: #EAF0F9; color: var(--accent2); flex-shrink: 0; }
+  .dd-badge.tr { background: #FDF0EE; color: var(--accent); }
+  .dd-msg { padding: 13px 20px; font-size: 0.85rem; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  .sp { width: 14px; height: 14px; flex-shrink: 0; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.65s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .card { width: 100%; max-width: 620px; margin-top: 20px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 24px; }
+  .ld-wrap { display: none; align-items: center; gap: 12px; padding: 22px 28px; font-size: 0.88rem; color: var(--muted); }
+  .ld-wrap.on { display: flex; }
+  .err-wrap { display: none; padding: 18px 28px; background: #FDF0EE; border-radius: 24px; border: 1.5px solid #F5C4B3; font-size: 0.88rem; color: var(--accent); text-align: center; }
+  .err-wrap.on { display: block; }
+  .result-wrap { display: none; padding: 28px 30px 24px; }
+  .result-wrap.on { display: block; animation: up 0.38s cubic-bezier(0.34,1.4,0.64,1); }
+  @keyframes up { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .rc-head { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 22px; }
+  .rc-av { width: 64px; height: 64px; border-radius: 50%; background: #EAF0F9; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 500; color: var(--accent2); flex-shrink: 0; overflow: hidden; }
+  .rc-av img { width: 100%; height: 100%; object-fit: cover; }
+  .rc-name { font-family: 'Playfair Display', serif; font-size: 1.55rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 4px; }
+  .rc-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+  .age-block { display: flex; align-items: baseline; gap: 12px; padding: 18px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .age-n { font-family: 'Playfair Display', serif; font-size: clamp(4rem, 13vw, 6.5rem); font-weight: 700; line-height: 1; letter-spacing: -0.04em; }
+  .age-l { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); padding-bottom: 6px; }
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 18px; }
+  .stat { background: var(--bg); border-radius: 14px; padding: 13px 12px; text-align: center; }
+  .stat-v { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--ink); display: block; margin-bottom: 3px; }
+  .stat-l { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .src { font-size: 0.74rem; color: var(--muted); }
+  .src a { color: var(--accent2); text-decoration: none; }
+  .src a:hover { text-decoration: underline; }
+  footer { margin-top: 40px; font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; color: var(--muted); text-align: center; }
+  @media(max-width:480px){ .stats { grid-template-columns: repeat(2,1fr); } .result-wrap { padding: 20px 18px; } }
+</style>
+</head>
+<body>
+
+<div class="hero" id="hero">
+  <div class="wordmark">How<span>Old</span></div>
+  <div class="tagline">Celebrity ages — nothing else</div>
+  <div class="search-wrap">
+    <div class="search-box">
+      <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="qinput" type="text" placeholder="Search a celebrity…" autocomplete="off" spellcheck="false">
+      <button class="clr" id="clrbtn" aria-label="Clear">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="dropdown" id="dd"></div>
+  </div>
+</div>
+
+<div class="card ld-wrap" id="ldwrap"><div class="sp"></div><span id="ldtxt">Searching…</span></div>
+<div class="err-wrap" id="errwrap"></div>
+<div class="card">
+  <div class="result-wrap" id="resultwrap">
+    <div class="rc-head">
+      <div class="rc-av" id="rc-av"></div>
+      <div style="flex:1;min-width:0">
+        <div class="rc-name" id="rc-name"></div>
+        <div class="rc-desc" id="rc-desc"></div>
+      </div>
+    </div>
+    <div class="age-block">
+      <div class="age-n" id="age-n"></div>
+      <div class="age-l">years old</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="stat-v" id="s-born"></span><span class="stat-l">Born</span></div>
+      <div class="stat"><span class="stat-v" id="s-sign"></span><span class="stat-l">Zodiac</span></div>
+      <div class="stat"><span class="stat-v" id="s-bday"></span><span class="stat-l">Next birthday</span></div>
+    </div>
+    <div class="src" id="src"></div>
+  </div>
+</div>
+
+<footer>Powered by Wikipedia EN + TR · Free &amp; open</footer>
+
+<script>
+// ── Person keyword filters ─────────────────────────────────────────────────
+const PERSON_KEYWORDS = [
+  // English
+  'actor','actress','singer','musician','rapper','footballer','athlete','player',
+  'director','producer','politician','model','comedian','presenter','author',
+  'writer','chef','entrepreneur','dancer','artist','painter','photographer',
+  'journalist','broadcaster','businessman','businesswoman','youtuber','influencer',
+  'born','american','british','canadian','australian','french','german','italian',
+  'spanish','swedish','norwegian','danish','dutch','nigerian','brazilian',
+  'argentinian','mexican','indian','japanese','korean','chinese','turkish',
+  'nba','nfl','nhl','mlb','tennis','golf','boxing','mma','wrestler',
+  // Turkish
+  'oyuncu','şarkıcı','müzisyen','müzik sanatçısı','futbolcu','sporcu','yönetmen',
+  'yapımcı','politikacı','komedyen','sunucu','yazar','girişimci','dansçı',
+  'sanatçı','gazeteci','ressam','fotoğrafçı','iş insanı','türk sanat müziği',
+  'halk müziği','arabesk','pop sanatçısı','manken','siyasetçi','akademisyen',
+  'profesör','doktor','mühendis','avukat','asker','general','general',
+  // Strong Turkish person signals
+  'doğdu','doğumlu','türk','türkiyeli','ankaralı','istanbullu','izmirli'
+];
+
+const NON_PERSON_KEYWORDS = [
+  // English
+  'film','movie','album','song','book','novel','tv series','television series',
+  'band','music group','company','corporation','organization','foundation',
+  'city','town','village','country','nation','region','province','state',
+  'river','mountain','lake','island','building','stadium','arena','airport',
+  'event','tournament','championship','award','festival','concept','theory',
+  'disease','syndrome','species','animal','plant','software','app','video game',
+  // Turkish
+  'dizi','film','albüm','şarkı','roman','ilçe','köy','nehir','dağ','göl',
+  'şehir','il ','belediye','müzik grubu','şirket','vakıf','dernek','turnuva'
+];
+
+function isPerson(desc, lang) {
+  if (!desc) return false;
+  const d = desc.toLowerCase();
+  // Strong signals: birth year pattern or "born" equivalents
+  if (/\b(born|doğdu|doğumlu)\b/.test(d)) return true;
+  if (/\b\d{4}\b/.test(d) && /\b(in|on)\b/.test(d)) return true;
+  const hasP = PERSON_KEYWORDS.some(k => d.includes(k));
+  const hasN = NON_PERSON_KEYWORDS.some(k => d.includes(k));
+  return hasP && !hasN;
+}
+
+// ── Wikipedia API ──────────────────────────────────────────────────────────
+async function searchWiki(q, lang) {
+  const base = `https://${lang}.wikipedia.org/w/api.php`;
+  // Fetch more candidates than we need so filtering has room to work
+  const sr = await fetch(`${base}?action=opensearch&search=${encodeURIComponent(q)}&limit=15&namespace=0&format=json&origin=*`);
+  const [, titles] = await sr.json();
+  if (!titles.length) return [];
+
+  // Batch fetch short descriptions + thumbnails for all candidates
+  const joined = titles.map(t => encodeURIComponent(t)).join('|');
+  const dr = await fetch(`${base}?action=query&titles=${joined}&prop=description|pageimages&piprop=thumbnail&pithumbsize=60&format=json&origin=*`);
+  const dd = await dr.json();
+  const pages = Object.values(dd.query.pages);
+
+  const infoMap = {};
+  pages.forEach(p => { infoMap[p.title] = { description: p.description || '', thumbnail: p.thumbnail?.source || null }; });
+
+  const results = [];
+  for (const title of titles) {
+    const info = infoMap[title] || {};
+    if (isPerson(info.description, lang)) {
+      results.push({ title, description: info.description, thumbnail: info.thumbnail, lang });
+      if (results.length >= 5) break;
+    }
+  }
+  return results;
+}
+
+async function fetchSuggestions(q) {
+  // Both wikis in parallel — TR gets equal priority, not just a fallback
+  const [enRes, trRes] = await Promise.allSettled([
+    searchWiki(q, 'en'),
+    searchWiki(q, 'tr')
+  ]);
+  const en = enRes.status === 'fulfilled' ? enRes.value : [];
+  const tr = trRes.status === 'fulfilled' ? trRes.value : [];
+
+  // Interleave: TR results that have no EN equivalent come through clearly
+  const seen = new Set();
+  const merged = [];
+
+  // First pass: EN results
+  for (const item of en) {
+    const key = item.title.toLowerCase().replace(/\s+/g, '');
+    if (!seen.has(key)) { seen.add(key); merged.push(item); }
+  }
+  // Second pass: TR-only results (not already covered by EN)
+  for (const item of tr) {
+    const key = item.title.toLowerCase().replace(/\s+/g, '');
+    if (!seen.has(key)) { seen.add(key); merged.push(item); }
+    if (merged.length >= 7) break;
+  }
+  return merged;
+}
+
+// ── Birthdate parsing (EN + TR templates) ─────────────────────────────────
+const MONTHS_EN = {january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11};
+const MONTHS_TR = {ocak:0,şubat:1,mart:2,nisan:3,'mayıs':4,haziran:5,temmuz:6,'ağustos':7,'eylül':8,ekim:9,'kasım':10,'aralık':11};
+const ALL_MONTHS = {...MONTHS_EN, ...MONTHS_TR};
+
+function parseBirthdate(wikitext) {
+  if (!wikitext) return null;
+
+  // 1. {{birth date|YYYY|MM|DD}} or {{doğum tarihi|YYYY|MM|DD}} (and variants with "ve yaşı")
+  let m = wikitext.match(/\{\{(?:[Bb]irth[\s_]date(?:[\s_]and[\s_]age)?|[Dd]o[gğ]um[\s_]tarihi(?:[\s_]ve[\s_]ya[sş][iı])?)\s*\|[^}]*?(\d{4})\s*\|\s*(\d{1,2})\s*\|\s*(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+
+  // 2. |born = / |doğum_tarihi = with various date formats
+  const bornBlock = wikitext.match(/(?:born|do[gğ]um[_\s]tarihi)\s*=\s*([^\n|}{]{2,80})/i)?.[1] || '';
+  if (bornBlock) {
+    // DD Month YYYY
+    m = bornBlock.match(/(\d{1,2})\s+([\wığüşöçĞÜŞÖÇİ]+)\s+(\d{4})/i);
+    if (m) {
+      const mo = ALL_MONTHS[m[2].toLowerCase()];
+      if (mo !== undefined) return new Date(+m[3], mo, +m[1]);
+    }
+    // Month DD, YYYY
+    m = bornBlock.match(/([\wığüşöçĞÜŞÖÇİ]+)\s+(\d{1,2}),?\s+(\d{4})/i);
+    if (m) {
+      const mo = ALL_MONTHS[m[1].toLowerCase()];
+      if (mo !== undefined) return new Date(+m[3], mo, +m[2]);
+    }
+    // YYYY-MM-DD inside the born block
+    m = bornBlock.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  }
+
+  // 3. Any ISO date in the wikitext (last resort)
+  m = wikitext.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m && +m[1] > 1880 && +m[1] < 2020) return new Date(+m[1], +m[2]-1, +m[3]);
+
+  return null;
+}
+
+async function getWikitext(title, lang) {
+  const url = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=revisions|description|pageimages&rvprop=content&rvslots=main&piprop=thumbnail&pithumbsize=120&format=json&origin=*`;
+  const res = await fetch(url);
+  const data = await res.json();
+  const page = Object.values(data.query.pages)[0];
+  if (!page || page.missing) return null;
+  return {
+    wikitext: page.revisions?.[0]?.slots?.main?.['*'] || '',
+    description: page.description || '',
+    thumbnail: page.thumbnail?.source || null,
+    title: page.title
+  };
+}
+
+async function lookupPerson(title, lang) {
+  // 1. Try primary language page
+  let info = await getWikitext(title, lang);
+  if (!info) throw new Error('Page not found on Wikipedia.');
+
+  let bd = parseBirthdate(info.wikitext);
+
+  // 2. If no birthdate found, try the other language via interlanguage link
+  if (!bd) {
+    const otherLang = lang === 'en' ? 'tr' : 'en';
+    try {
+      const llUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=langlinks&lllang=${otherLang}&format=json&origin=*`;
+      const llRes = await fetch(llUrl);
+      const llData = await llRes.json();
+      const llPage = Object.values(llData.query.pages)[0];
+      const otherTitle = llPage?.langlinks?.[0]?.['*'];
+      if (otherTitle) {
+        const otherInfo = await getWikitext(otherTitle, otherLang);
+        if (otherInfo) bd = parseBirthdate(otherInfo.wikitext);
+      }
+    } catch(e) { /* cross-lang fallback failed */ }
+  }
+
+  // 3. If still nothing, search the other wiki directly by name
+  if (!bd) {
+    const otherLang = lang === 'en' ? 'tr' : 'en';
+    try {
+      const otherInfo = await getWikitext(title, otherLang);
+      if (otherInfo) bd = parseBirthdate(otherInfo.wikitext);
+    } catch(e) { /* direct name fallback failed */ }
+  }
+
+  if (!bd) throw new Error('Could not find a birth date for this person. Wikipedia may not have it.');
+
+  return {
+    name: info.title,
+    description: info.description,
+    birthdate: bd,
+    age: calcAge(bd),
+    zodiac: zodiacSign(bd),
+    thumbnail: info.thumbnail,
+    wikiUrl: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g,'_'))}`,
+    lang
+  };
+}
+
+// ── Date utilities ─────────────────────────────────────────────────────────
+function calcAge(bd) {
+  const t = new Date();
+  let age = t.getFullYear() - bd.getFullYear();
+  if (t.getMonth() < bd.getMonth() || (t.getMonth()===bd.getMonth() && t.getDate()<bd.getDate())) age--;
+  return age;
+}
+function zodiacSign(bd) {
+  const d=bd.getDate(), mo=bd.getMonth()+1;
+  if((mo===3&&d>=21)||(mo===4&&d<=19)) return 'Aries ♈';
+  if((mo===4&&d>=20)||(mo===5&&d<=20)) return 'Taurus ♉';
+  if((mo===5&&d>=21)||(mo===6&&d<=20)) return 'Gemini ♊';
+  if((mo===6&&d>=21)||(mo===7&&d<=22)) return 'Cancer ♋';
+  if((mo===7&&d>=23)||(mo===8&&d<=22)) return 'Leo ♌';
+  if((mo===8&&d>=23)||(mo===9&&d<=22)) return 'Virgo ♍';
+  if((mo===9&&d>=23)||(mo===10&&d<=22)) return 'Libra ♎';
+  if((mo===10&&d>=23)||(mo===11&&d<=21)) return 'Scorpio ♏';
+  if((mo===11&&d>=22)||(mo===12&&d<=21)) return 'Sagittarius ♐';
+  if((mo===12&&d>=22)||(mo===1&&d<=19)) return 'Capricorn ♑';
+  if((mo===1&&d>=20)||(mo===2&&d<=18)) return 'Aquarius ♒';
+  return 'Pisces ♓';
+}
+function daysUntilBirthday(bd) {
+  const today=new Date();
+  let next=new Date(today.getFullYear(),bd.getMonth(),bd.getDate());
+  if(next<today) next.setFullYear(today.getFullYear()+1);
+  const d=Math.round((next-today)/86400000);
+  return d===0?'Today!':d===1?'Tomorrow':`${d} days`;
+}
+function initials(n){return n.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();}
+function hl(name,q){try{return name.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'),'<em>$1</em>');}catch{return name;}}
+
+// ── UI ─────────────────────────────────────────────────────────────────────
+let timer, activeIdx=-1, sugs=[];
+const inp=document.getElementById('qinput'), clrBtn=document.getElementById('clrbtn'),
+  dd=document.getElementById('dd'), hero=document.getElementById('hero'),
+  ldwrap=document.getElementById('ldwrap'), ldtxt=document.getElementById('ldtxt'),
+  errwrap=document.getElementById('errwrap'), reswrap=document.getElementById('resultwrap');
+
+function closeDd(){dd.classList.remove('on');dd.innerHTML='';activeIdx=-1;}
+function hideAll(){ldwrap.classList.remove('on');errwrap.classList.remove('on');reswrap.classList.remove('on');}
+function showErr(msg){errwrap.textContent=msg;errwrap.classList.add('on');}
+function showLd(msg){ldtxt.textContent=msg;ldwrap.classList.add('on');}
+
+async function suggest(q){
+  if(q.length<2){closeDd();return;}
+  dd.innerHTML=`<div class="dd-msg"><div class="sp"></div>Searching people…</div>`;
+  dd.classList.add('on');
+  try{
+    sugs=await fetchSuggestions(q);
+    if(!sugs.length){dd.innerHTML=`<div class="dd-msg">No people found for "${q}"</div>`;return;}
+    dd.innerHTML=sugs.map((s,i)=>`
+      <div class="dd-item" data-i="${i}">
+        <div class="dd-av">${s.thumbnail?`<img src="${s.thumbnail}" alt="">`:`${initials(s.title)}`}</div>
+        <div style="flex:1;min-width:0">
+          <div class="dd-name">${hl(s.title,q)}</div>
+          ${s.description?`<div class="dd-desc">${s.description}</div>`:''}
+        </div>
+        <div class="dd-badge ${s.lang}">${s.lang.toUpperCase()}</div>
+      </div>`).join('');
+    dd.classList.add('on');
+    dd.querySelectorAll('.dd-item').forEach(el=>el.addEventListener('mousedown',e=>{e.preventDefault();pick(sugs[+el.dataset.i]);}));
+  }catch(e){dd.innerHTML=`<div class="dd-msg">Error: ${e.message}</div>`;}
+}
+
+function pick(s){inp.value=s.title;clrBtn.classList.add('on');closeDd();lookup(s.title,s.lang);}
+
+async function lookup(title,lang='en'){
+  closeDd();hideAll();
+  hero.classList.add('shifted');
+  showLd('Looking up birth date…');
+  try{
+    const p=await lookupPerson(title,lang);
+    ldwrap.classList.remove('on');
+    const avEl=document.getElementById('rc-av');
+    avEl.innerHTML=p.thumbnail?`<img src="${p.thumbnail}" alt="${p.name}">`:`${initials(p.name)}`;
+    document.getElementById('rc-name').textContent=p.name;
+    document.getElementById('rc-desc').textContent=p.description;
+    document.getElementById('age-n').textContent=p.age;
+    const bd=p.birthdate;
+    document.getElementById('s-born').textContent=bd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    document.getElementById('s-sign').textContent=p.zodiac;
+    document.getElementById('s-bday').textContent=daysUntilBirthday(bd);
+    document.getElementById('src').innerHTML=`Source: <a href="${p.wikiUrl}" target="_blank" rel="noopener">Wikipedia ${p.lang.toUpperCase()}</a>`;
+    reswrap.classList.add('on');
+  }catch(e){
+    ldwrap.classList.remove('on');
+    showErr(e.message||'Could not find birth date. Try a different spelling.');
+  }
+}
+
+inp.addEventListener('input',()=>{
+  const v=inp.value.trim();
+  clrBtn.classList.toggle('on',v.length>0);
+  if(!v){closeDd();return;}
+  clearTimeout(timer);
+  timer=setTimeout(()=>suggest(v),350);
+});
+
+inp.addEventListener('keydown',e=>{
+  const items=dd.querySelectorAll('.dd-item');
+  if(e.key==='ArrowDown'){e.preventDefault();activeIdx=Math.min(activeIdx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('hi',i===activeIdx));}
+  else if(e.key==='ArrowUp'){e.preventDefault();activeIdx=Math.max(activeIdx-1,-1);items.forEach((el,i)=>el.classList.toggle('hi',i===activeIdx));}
+  else if(e.key==='Enter'){e.preventDefault();if(activeIdx>=0&&sugs[activeIdx])pick(sugs[activeIdx]);else if(inp.value.trim())lookup(inp.value.trim(),'en');}
+  else if(e.key==='Escape')closeDd();
+});
+
+clrBtn.addEventListener('click',()=>{inp.value='';clrBtn.classList.remove('on');closeDd();hideAll();hero.classList.remove('shifted');inp.focus();});
+document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))closeDd();});
+</script>
+</body>
+</html>
