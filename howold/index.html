@@ -41,6 +41,10 @@
   .dd-desc { font-size: 0.75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
   .dd-badge { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 99px; background: #EAF0F9; color: var(--accent2); flex-shrink: 0; }
   .dd-badge.tr { background: #FDF0EE; color: var(--accent); }
+  .dd-age { flex-shrink: 0; min-width: 36px; text-align: right; }
+  .dd-age-num { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: var(--ink); line-height: 1; }
+  .dd-age-num.deceased { font-size: 1rem; color: var(--muted); }
+  .sp-sm { width: 10px; height: 10px; border: 1.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.65s linear infinite; display: inline-block; }
   .dd-msg { padding: 13px 20px; font-size: 0.85rem; color: var(--muted); display: flex; align-items: center; gap: 10px; }
   .sp { width: 14px; height: 14px; flex-shrink: 0; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.65s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -106,7 +110,7 @@
     <div class="stats">
       <div class="stat"><span class="stat-v" id="s-born"></span><span class="stat-l">Born</span></div>
       <div class="stat"><span class="stat-v" id="s-sign"></span><span class="stat-l">Zodiac</span></div>
-      <div class="stat"><span class="stat-v" id="s-bday"></span><span class="stat-l">Next birthday</span></div>
+      <div class="stat"><span class="stat-v" id="s-bday"></span><span class="stat-l" id="s-bday-label">Next birthday</span></div>
     </div>
     <div class="src" id="src"></div>
   </div>
@@ -136,40 +140,114 @@ const PERSON_KEYWORDS = [
   'doğdu','doğumlu','türk','türkiyeli','ankaralı','istanbullu','izmirli'
 ];
 
-const NON_PERSON_KEYWORDS = [
-  // English
-  'film','movie','album','song','book','novel','tv series','television series',
-  'band','music group','company','corporation','organization','foundation',
-  'city','town','village','country','nation','region','province','state',
-  'river','mountain','lake','island','building','stadium','arena','airport',
-  'event','tournament','championship','award','festival','concept','theory',
-  'disease','syndrome','species','animal','plant','software','app','video game',
-  // Turkish
-  'dizi','film','albüm','şarkı','roman','ilçe','köy','nehir','dağ','göl',
-  'şehir','il ','belediye','müzik grubu','şirket','vakıf','dernek','turnuva'
+// NON_PERSON: these are full-word patterns — we match with word boundaries
+// to avoid e.g. 'şarkı' matching inside 'şarkıcı', or 'film' inside 'filmmaker'
+const NON_PERSON_PATTERNS = [
+  // English — things that are clearly not people
+  /\bfilm\b(?! maker| director| producer)/,
+  /\bmovie\b/,
+  /\balbum\b/,
+  /\bsong\b/,
+  /\bnovel\b/,
+  /\btv series\b/,
+  /\btelevision series\b/,
+  /\bmusic group\b/,
+  /\bband\b(?! member)/,
+  /\bcompany\b/,
+  /\bcorporation\b/,
+  /\borganization\b/,
+  /\bfoundation\b(?! s born)/,
+  /\bcity\b/,
+  /\btown\b/,
+  /\bvillage\b/,
+  /\bcountry\b(?! singer| music)/,
+  /\bregion\b/,
+  /\bprovince\b/,
+  /\briver\b/,
+  /\bmountain\b/,
+  /\blake\b/,
+  /\bisland\b/,
+  /\bbuilding\b/,
+  /\bstadium\b/,
+  /\barena\b/,
+  /\bairport\b/,
+  /\btournament\b/,
+  /\bchampionship\b/,
+  /\bfestival\b/,
+  /\bdisease\b/,
+  /\bsyndrome\b/,
+  /\bspecies\b/,
+  /\bvideo game\b/,
+  /\bsoftware\b/,
+  // Turkish — careful not to match substrings of person words
+  /\bdizi\b/,           // TV series — NOT 'sanatçı' etc
+  /\balbüm\b/,          // album
+  /\bşarkı\b(?!cı|cısı)/, // şarkı (song) but NOT şarkıcı (singer)
+  /\broman\b/,          // novel
+  /\bilçe\b/,           // district
+  /\bköy\b/,            // village
+  /\bnehir\b/,          // river
+  /\bşehir\b/,          // city
+  /\bbelediye\b/,       // municipality
+  /\bmüzik grubu\b/,    // music group (NOT müzik sanatçısı)
+  /\bşirket\b/,         // company
+  /\bvakıf\b/,          // foundation (org)
+  /\bdernek\b/,         // association
+  /\bturnuva\b/,        // tournament
 ];
 
 function isPerson(desc, lang) {
   if (!desc) return false;
   const d = desc.toLowerCase();
-  // Strong signals: birth year pattern or "born" equivalents
+  // Strong positive signals
   if (/\b(born|doğdu|doğumlu)\b/.test(d)) return true;
   if (/\b\d{4}\b/.test(d) && /\b(in|on)\b/.test(d)) return true;
   const hasP = PERSON_KEYWORDS.some(k => d.includes(k));
-  const hasN = NON_PERSON_KEYWORDS.some(k => d.includes(k));
+  const hasN = NON_PERSON_PATTERNS.some(rx => rx.test(d));
   return hasP && !hasN;
 }
 
 // ── Wikipedia API ──────────────────────────────────────────────────────────
+// Generate plausible Turkish-char variants of an ASCII query
+// e.g. "neset ertas" → ["neset ertas", "neşet ertaş", "neşet ertas", ...]
+function trVariants(q) {
+  const variants = new Set([q]);
+  // Common substitutions: ascii → possible turkish chars
+  const subs = [
+    ['s', 'ş'], ['c', 'ç'], ['g', 'ğ'], ['u', 'ü'], ['o', 'ö'], ['i', 'ı']
+  ];
+  // Apply each substitution independently to generate variants
+  for (const [from, to] of subs) {
+    const re = new RegExp(from, 'gi');
+    if (re.test(q)) {
+      const v = q.replace(re, m => m === m.toUpperCase() ? to.toUpperCase() : to);
+      variants.add(v);
+    }
+  }
+  return [...variants].slice(0, 3); // cap at 3 to avoid too many API calls
+}
+
 async function searchWiki(q, lang) {
   const base = `https://${lang}.wikipedia.org/w/api.php`;
-  // Fetch more candidates than we need so filtering has room to work
-  const sr = await fetch(`${base}?action=opensearch&search=${encodeURIComponent(q)}&limit=15&namespace=0&format=json&origin=*`);
-  const [, titles] = await sr.json();
-  if (!titles.length) return [];
+
+  // For TR wiki, also search Turkish-char variants of the query
+  const queriesToTry = lang === 'tr' ? trVariants(q) : [q];
+
+  const allTitles = [];
+  const seenTitles = new Set();
+
+  for (const variant of queriesToTry) {
+    const sr = await fetch(`${base}?action=opensearch&search=${encodeURIComponent(variant)}&limit=10&namespace=0&format=json&origin=*`);
+    const [, titles] = await sr.json();
+    for (const t of titles) {
+      if (!seenTitles.has(t)) { seenTitles.add(t); allTitles.push(t); }
+    }
+  }
+
+  if (!allTitles.length) return [];
 
   // Batch fetch short descriptions + thumbnails for all candidates
-  const joined = titles.map(t => encodeURIComponent(t)).join('|');
+  const joined = allTitles.map(t => encodeURIComponent(t)).join('|');
   const dr = await fetch(`${base}?action=query&titles=${joined}&prop=description|pageimages&piprop=thumbnail&pithumbsize=60&format=json&origin=*`);
   const dd = await dr.json();
   const pages = Object.values(dd.query.pages);
@@ -178,7 +256,7 @@ async function searchWiki(q, lang) {
   pages.forEach(p => { infoMap[p.title] = { description: p.description || '', thumbnail: p.thumbnail?.source || null }; });
 
   const results = [];
-  for (const title of titles) {
+  for (const title of allTitles) {
     const info = infoMap[title] || {};
     if (isPerson(info.description, lang)) {
       results.push({ title, description: info.description, thumbnail: info.thumbnail, lang });
@@ -220,38 +298,53 @@ const MONTHS_EN = {january:0,february:1,march:2,april:3,may:4,june:5,july:6,augu
 const MONTHS_TR = {ocak:0,şubat:1,mart:2,nisan:3,'mayıs':4,haziran:5,temmuz:6,'ağustos':7,'eylül':8,ekim:9,'kasım':10,'aralık':11};
 const ALL_MONTHS = {...MONTHS_EN, ...MONTHS_TR};
 
-function parseBirthdate(wikitext) {
+// Returns {birthdate, deceased} or null
+function parsePersonDates(wikitext) {
   if (!wikitext) return null;
 
-  // 1. {{birth date|YYYY|MM|DD}} or {{doğum tarihi|YYYY|MM|DD}} (and variants with "ve yaşı")
-  let m = wikitext.match(/\{\{(?:[Bb]irth[\s_]date(?:[\s_]and[\s_]age)?|[Dd]o[gğ]um[\s_]tarihi(?:[\s_]ve[\s_]ya[sş][iı])?)\s*\|[^}]*?(\d{4})\s*\|\s*(\d{1,2})\s*\|\s*(\d{1,2})/);
-  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  // ── Detect death ──────────────────────────────────────────────────────
+  // Only match actual infobox death fields, NOT mentions of "death" in article body
+  // Infobox fields look like: | death_date = ... or {{death date|...}} or | ölüm_tarihi =
+  const deceased =
+    /\|[^\S\n]*death_date[^\S\n]*=[^\S\n]*\S/.test(wikitext) ||
+    /\|[^\S\n]*ölüm[_\s]tarihi[^\S\n]*=[^\S\n]*\S/.test(wikitext) ||
+    /\|[^\S\n]*ölüm[_\s]yeri[^\S\n]*=[^\S\n]*\S/.test(wikitext) ||
+    /\{\{[Dd]eath\s+date/.test(wikitext) ||
+    /\{\{[Dd]eath\s+year/.test(wikitext);
 
-  // 2. |born = / |doğum_tarihi = with various date formats
-  const bornBlock = wikitext.match(/(?:born|do[gğ]um[_\s]tarihi)\s*=\s*([^\n|}{]{2,80})/i)?.[1] || '';
-  if (bornBlock) {
-    // DD Month YYYY
-    m = bornBlock.match(/(\d{1,2})\s+([\wığüşöçĞÜŞÖÇİ]+)\s+(\d{4})/i);
-    if (m) {
-      const mo = ALL_MONTHS[m[2].toLowerCase()];
-      if (mo !== undefined) return new Date(+m[3], mo, +m[1]);
+  // ── Parse birthdate ───────────────────────────────────────────────────
+  let bd = null;
+
+  // 1. {{birth date|YYYY|MM|DD}} or {{doğum tarihi|YYYY|MM|DD}}
+  let m = wikitext.match(/\{\{(?:[Bb]irth[\s_]date(?:[\s_]and[\s_]age)?|[Dd]o[gğ]um[\s_]tarihi(?:[\s_]ve[\s_]ya[sş][iı])?)\s*\|[^}]*?(\d{4})\s*\|\s*(\d{1,2})\s*\|\s*(\d{1,2})/);
+  if (m) bd = new Date(+m[1], +m[2]-1, +m[3]);
+
+  // 2. |born = ... or |doğum_tarihi = ...
+  if (!bd) {
+    const bornBlock = wikitext.match(/(?:born|do[gğ]um[_\s]tarihi)\s*=\s*([^\n|}{]{2,80})/i)?.[1] || '';
+    if (bornBlock) {
+      m = bornBlock.match(/(\d{1,2})\s+([\wığüşöçĞÜŞÖÇİ]+)\s+(\d{4})/i);
+      if (m) { const mo = ALL_MONTHS[m[2].toLowerCase()]; if (mo !== undefined) bd = new Date(+m[3], mo, +m[1]); }
+      if (!bd) {
+        m = bornBlock.match(/([\wığüşöçĞÜŞÖÇİ]+)\s+(\d{1,2}),?\s+(\d{4})/i);
+        if (m) { const mo = ALL_MONTHS[m[1].toLowerCase()]; if (mo !== undefined) bd = new Date(+m[3], mo, +m[2]); }
+      }
+      if (!bd) { m = bornBlock.match(/(\d{4})-(\d{2})-(\d{2})/); if (m) bd = new Date(+m[1], +m[2]-1, +m[3]); }
     }
-    // Month DD, YYYY
-    m = bornBlock.match(/([\wığüşöçĞÜŞÖÇİ]+)\s+(\d{1,2}),?\s+(\d{4})/i);
-    if (m) {
-      const mo = ALL_MONTHS[m[1].toLowerCase()];
-      if (mo !== undefined) return new Date(+m[3], mo, +m[2]);
-    }
-    // YYYY-MM-DD inside the born block
-    m = bornBlock.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (m) return new Date(+m[1], +m[2]-1, +m[3]);
   }
 
-  // 3. Any ISO date in the wikitext (last resort)
-  m = wikitext.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (m && +m[1] > 1880 && +m[1] < 2020) return new Date(+m[1], +m[2]-1, +m[3]);
+  // 3. ISO date last resort — but SKIP lines containing death/ölüm markers
+  if (!bd) {
+    const lines = wikitext.split('\n');
+    for (const line of lines) {
+      if (/\|\s*(?:death_date|ölüm[_\s]tarihi|ölüm[_\s]yeri)\s*=/i.test(line)) continue; // skip death infobox fields
+      m = line.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (m && +m[1] > 1880 && +m[1] < 2020) { bd = new Date(+m[1], +m[2]-1, +m[3]); break; }
+    }
+  }
 
-  return null;
+  if (!bd) return null;
+  return { birthdate: bd, deceased };
 }
 
 async function getWikitext(title, lang) {
@@ -269,14 +362,13 @@ async function getWikitext(title, lang) {
 }
 
 async function lookupPerson(title, lang) {
-  // 1. Try primary language page
   let info = await getWikitext(title, lang);
   if (!info) throw new Error('Page not found on Wikipedia.');
 
-  let bd = parseBirthdate(info.wikitext);
+  let parsed = parsePersonDates(info.wikitext);
 
-  // 2. If no birthdate found, try the other language via interlanguage link
-  if (!bd) {
+  // Try cross-lang fallback if no birthdate
+  if (!parsed) {
     const otherLang = lang === 'en' ? 'tr' : 'en';
     try {
       const llUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=langlinks&lllang=${otherLang}&format=json&origin=*`;
@@ -286,33 +378,35 @@ async function lookupPerson(title, lang) {
       const otherTitle = llPage?.langlinks?.[0]?.['*'];
       if (otherTitle) {
         const otherInfo = await getWikitext(otherTitle, otherLang);
-        if (otherInfo) bd = parseBirthdate(otherInfo.wikitext);
+        if (otherInfo) parsed = parsePersonDates(otherInfo.wikitext);
       }
-    } catch(e) { /* cross-lang fallback failed */ }
+    } catch(e) {}
   }
 
-  // 3. If still nothing, search the other wiki directly by name
-  if (!bd) {
+  // Direct name search in other lang as last resort
+  if (!parsed) {
     const otherLang = lang === 'en' ? 'tr' : 'en';
     try {
       const otherInfo = await getWikitext(title, otherLang);
-      if (otherInfo) bd = parseBirthdate(otherInfo.wikitext);
-    } catch(e) { /* direct name fallback failed */ }
+      if (otherInfo) parsed = parsePersonDates(otherInfo.wikitext);
+    } catch(e) {}
   }
 
-  if (!bd) throw new Error('Could not find a birth date for this person. Wikipedia may not have it.');
+  if (!parsed) throw new Error('Could not find a birth date for this person. Wikipedia may not have it.');
 
   return {
     name: info.title,
     description: info.description,
-    birthdate: bd,
-    age: calcAge(bd),
-    zodiac: zodiacSign(bd),
+    birthdate: parsed.birthdate,
+    deceased: parsed.deceased,
+    age: calcAge(parsed.birthdate),
+    zodiac: zodiacSign(parsed.birthdate),
     thumbnail: info.thumbnail,
     wikiUrl: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g,'_'))}`,
     lang
   };
 }
+
 
 // ── Date utilities ─────────────────────────────────────────────────────────
 function calcAge(bd) {
@@ -344,7 +438,28 @@ function daysUntilBirthday(bd) {
   return d===0?'Today!':d===1?'Tomorrow':`${d} days`;
 }
 function initials(n){return n.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();}
-function hl(name,q){try{return name.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'),'<em>$1</em>');}catch{return name;}}
+
+// Normalize Turkish special chars for fuzzy matching
+function normTR(s){
+  return s.toLowerCase()
+    .replace(/[şŞ]/g,'s').replace(/[çÇ]/g,'c').replace(/[ğĞ]/g,'g')
+    .replace(/[üÜ]/g,'u').replace(/[öÖ]/g,'o').replace(/[ıİ]/g,'i');
+}
+
+// Highlight query match in name, tolerating Turkish char differences
+function hl(name, q) {
+  try {
+    const normName = normTR(name);
+    const normQ = normTR(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const rx = new RegExp(normQ, 'gi');
+    let result = '', last = 0, m;
+    while ((m = rx.exec(normName)) !== null) {
+      result += name.slice(last, m.index) + '<em>' + name.slice(m.index, m.index + m[0].length) + '</em>';
+      last = m.index + m[0].length;
+    }
+    return (result + name.slice(last)) || name;
+  } catch { return name; }
+}
 
 // ── UI ─────────────────────────────────────────────────────────────────────
 let timer, activeIdx=-1, sugs=[];
@@ -365,6 +480,8 @@ async function suggest(q){
   try{
     sugs=await fetchSuggestions(q);
     if(!sugs.length){dd.innerHTML=`<div class="dd-msg">No people found for "${q}"</div>`;return;}
+
+    // Render immediately with spinner placeholders for age
     dd.innerHTML=sugs.map((s,i)=>`
       <div class="dd-item" data-i="${i}">
         <div class="dd-av">${s.thumbnail?`<img src="${s.thumbnail}" alt="">`:`${initials(s.title)}`}</div>
@@ -372,31 +489,72 @@ async function suggest(q){
           <div class="dd-name">${hl(s.title,q)}</div>
           ${s.description?`<div class="dd-desc">${s.description}</div>`:''}
         </div>
-        <div class="dd-badge ${s.lang}">${s.lang.toUpperCase()}</div>
+        <div class="dd-age" id="dd-age-${i}"><div class="sp-sm"></div></div>
       </div>`).join('');
     dd.classList.add('on');
     dd.querySelectorAll('.dd-item').forEach(el=>el.addEventListener('mousedown',e=>{e.preventDefault();pick(sugs[+el.dataset.i]);}));
+
+    // Fetch ages in parallel, fill in as each arrives
+    sugs.forEach(async (s, i) => {
+      try {
+        const info = await getWikitext(s.title, s.lang);
+        if (!info) return;
+        const parsed = parsePersonDates(info.wikitext);
+        const el = document.getElementById(`dd-age-${i}`);
+        if (!el) return;
+        if (parsed) {
+          el.innerHTML = parsed.deceased
+            ? `<span class="dd-age-num deceased">✝</span>`
+            : `<span class="dd-age-num">${calcAge(parsed.birthdate)}</span>`;
+          sugs[i]._parsed = parsed;
+          sugs[i]._wikiInfo = info;
+        } else {
+          el.innerHTML = '';
+        }
+      } catch { const el=document.getElementById(`dd-age-${i}`); if(el) el.innerHTML=''; }
+    });
+
   }catch(e){dd.innerHTML=`<div class="dd-msg">Error: ${e.message}</div>`;}
 }
 
-function pick(s){inp.value=s.title;clrBtn.classList.add('on');closeDd();lookup(s.title,s.lang);}
+function pick(s){inp.value=s.title;clrBtn.classList.add('on');closeDd();lookup(s.title,s.lang,s._parsed,s._wikiInfo);}
 
-async function lookup(title,lang='en'){
+async function lookup(title,lang='en',cachedParsed,cachedInfo){
   closeDd();hideAll();
   hero.classList.add('shifted');
   showLd('Looking up birth date…');
   try{
-    const p=await lookupPerson(title,lang);
+    const p = cachedParsed && cachedInfo
+      ? { name: cachedInfo.title, description: cachedInfo.description, thumbnail: cachedInfo.thumbnail,
+          birthdate: cachedParsed.birthdate, deceased: cachedParsed.deceased,
+          age: calcAge(cachedParsed.birthdate), zodiac: zodiacSign(cachedParsed.birthdate),
+          wikiUrl: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g,'_'))}`, lang }
+      : await lookupPerson(title, lang);
     ldwrap.classList.remove('on');
     const avEl=document.getElementById('rc-av');
     avEl.innerHTML=p.thumbnail?`<img src="${p.thumbnail}" alt="${p.name}">`:`${initials(p.name)}`;
     document.getElementById('rc-name').textContent=p.name;
     document.getElementById('rc-desc').textContent=p.description;
-    document.getElementById('age-n').textContent=p.age;
+
+    if (p.deceased) {
+      document.getElementById('age-n').textContent = '✝';
+      document.getElementById('age-n').style.fontSize = 'clamp(2.5rem,8vw,4rem)';
+      document.querySelector('.age-l').textContent = 'deceased';
+    } else {
+      document.getElementById('age-n').textContent = p.age;
+      document.getElementById('age-n').style.fontSize = '';
+      document.querySelector('.age-l').textContent = 'years old';
+    }
     const bd=p.birthdate;
     document.getElementById('s-born').textContent=bd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
     document.getElementById('s-sign').textContent=p.zodiac;
-    document.getElementById('s-bday').textContent=daysUntilBirthday(bd);
+    if (p.deceased) {
+      document.getElementById('s-bday').textContent = p.age + ' yrs';
+      document.getElementById('s-bday-label').textContent = 'Age at death';
+    } else {
+      document.getElementById('s-bday').textContent = daysUntilBirthday(bd);
+      document.getElementById('s-bday-label').textContent = 'Next birthday';
+    }
     document.getElementById('src').innerHTML=`Source: <a href="${p.wikiUrl}" target="_blank" rel="noopener">Wikipedia ${p.lang.toUpperCase()}</a>`;
     reswrap.classList.add('on');
   }catch(e){
