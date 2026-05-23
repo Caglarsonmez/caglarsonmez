@@ -364,12 +364,7 @@
         </select>
       </div>
     </div>
-    <div class="form-row full">
-      <div class="form-field">
-        <label>Cover image URL (optional)</label>
-        <input type="text" id="m-cover" placeholder="https://…" />
-      </div>
-    </div>
+
     <button class="submit-btn" onclick="manualAdd()">Add to Library</button>
   </div>
 
@@ -411,6 +406,8 @@
 // ── CONFIG — change these ──────────────────────────────────────────
 const CORRECT_PASSWORD  = '19891989';  // ← set your password here
 const GOOGLE_BOOKS_KEY  = 'AIzaSyBvui-dQoa5Uw3peNbtbbAKEG02sBMCfTI';          // ← paste your Google Books API key here
+const SUPABASE_URL      = 'https://fkcdmizajnkmjfoduofs.supabase.co';          // ← paste your Supabase project URL here
+const SUPABASE_KEY      = 'sb_publishable_FXFJfIgOkIdxdqZvxEClYQ_wheFwYoz';          // ← paste your Supabase anon key here
 // ──────────────────────────────────────────────────────────────────
 
 let books = [];
@@ -444,8 +441,14 @@ function switchTab(name, el) {
 
 // ── Supabase ──────────────────────────────────────────────────────
 function loadConfig() {
-  sbUrl = localStorage.getItem('lib_sb_url') || '';
-  sbKey = localStorage.getItem('lib_sb_key') || '';
+  // Hardcoded credentials take priority — no per-device setup needed
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    sbUrl = SUPABASE_URL;
+    sbKey = SUPABASE_KEY;
+  } else {
+    sbUrl = localStorage.getItem('lib_sb_url') || '';
+    sbKey = localStorage.getItem('lib_sb_key') || '';
+  }
   if (sbUrl && sbKey) {
     configured = true;
     document.getElementById('cfg-url').value = sbUrl;
@@ -526,9 +529,7 @@ function renderLibrary() {
 
   list.innerHTML = visible.map(b => `
     <div class="book-item">
-      ${b.cover_url
-        ? `<img class="book-cover" src="${esc(b.cover_url)}" alt="" onerror="this.outerHTML='<div class=book-cover-placeholder>📖</div>'">`
-        : `<div class="book-cover-placeholder">📖</div>`}
+
       <div class="book-info">
         <div class="book-title" title="${esc(b.title)}">${esc(b.title)}</div>
         ${b.author ? `<div class="book-author">${esc(b.author)}</div>` : ''}
@@ -588,11 +589,10 @@ async function manualAdd() {
     title,
     author:    document.getElementById('m-author').value.trim() || null,
     isbn:      document.getElementById('m-isbn').value.trim()   || null,
-    cover_url: document.getElementById('m-cover').value.trim()  || null,
     status:    document.getElementById('m-status').value
   };
   await addBookRecord(book);
-  ['m-title','m-author','m-isbn','m-cover'].forEach(id => document.getElementById(id).value = '');
+  ['m-title','m-author','m-isbn'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('m-status').value = 'unread';
 }
 
@@ -651,7 +651,7 @@ async function searchGbooks(q) {
     const bookData = JSON.stringify(b).replace(/"/g, '&quot;');
     return `
       <div class="gbook-item">
-        ${b.cover_url ? `<img src="${esc(b.cover_url)}" alt="" onerror="this.outerHTML='<div class=gbook-placeholder>📖</div>'">` : `<div class="gbook-placeholder">📖</div>`}
+
         <div class="gbook-info">
           <div class="gbook-title">${esc(b.title)}</div>
           ${b.author ? `<div class="gbook-author">${esc(b.author)}</div>` : ''}
