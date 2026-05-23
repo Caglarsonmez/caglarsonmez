@@ -623,45 +623,81 @@ function debounceGbooks() {
 async function searchGbooks(q) {
   const el = document.getElementById('gbooks-results');
   el.innerHTML = '<div class="empty-msg" style="padding:16px;">Searching…</div>';
-  try {
-    const keyParam = GOOGLE_BOOKS_KEY ? '&key=' + GOOGLE_BOOKS_KEY : '';
-    const url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=8&langRestrict=en' + keyParam;
-    const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) { el.innerHTML = '<div class="empty-msg" style="padding:16px;">API error ' + res.status + '</div>'; return; }
-    const data = await res.json();
-    if (!data.items || !data.items.length) { el.innerHTML = '<div class="empty-msg" style="padding:16px;">No results found.</div>'; return; }
-    el.innerHTML = data.items.map(item => {
-      const info   = item.volumeInfo || {};
-      const title  = info.title || 'Unknown title';
-      const author = (info.authors || []).join(', ');
-      const ids    = info.industryIdentifiers || [];
-      const isbn   = ((ids.find(i => i.type === 'ISBN_13') || ids.find(i => i.type === 'ISBN_10') || {})).identifier || '';
-      const rawCover = info.imageLinks ? (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail || '') : '';
-      const cover  = rawCover.replace(/^http:\/\//i, 'https://').replace('&edge=curl', '').replace('zoom=1', 'zoom=2');
-      const already = books.find(b => (isbn && b.isbn === isbn) || b.title.toLowerCase() === title.toLowerCase());
-      const bookData = JSON.stringify({ title, author: author || null, isbn: isbn || null, cover_url: cover || null }).replace(/"/g, '&quot;');
-      return `
-        <div class="gbook-item">
-          ${cover ? `<img src="${esc(cover)}" alt="" onerror="this.outerHTML='<div class=gbook-placeholder>📖</div>'">` : `<div class="gbook-placeholder">📖</div>`}
-          <div class="gbook-info">
-            <div class="gbook-title">${esc(title)}</div>
-            ${author ? `<div class="gbook-author">${esc(author)}</div>` : ''}
-            ${isbn   ? `<div class="gbook-isbn">${isbn}</div>` : ''}
-          </div>
-          <div class="gbook-actions">
-            ${already
-              ? `<span class="already-badge">In library (${already.status})</span>`
-              : `<button class="add-as-btn read-btn"  onclick='addFromGoogle(${bookData},"read")'    >+ Read</button>
-                 <button class="add-as-btn"            onclick='addFromGoogle(${bookData},"unread")'  >+ Unread</button>
-                 <button class="add-as-btn wish-btn"   onclick='addFromGoogle(${bookData},"wishlist")'>+ Wishlist</button>`
-            }
-          </div>
-        </div>`;
-    }).join('');
-  } catch(e) {
-    el.innerHTML = '<div class="empty-msg" style="padding:16px;">Search failed: ' + e.message + '</div>';
-    console.error('Google Books error:', e);
+
+  const [gResults, olResults] = await Promise.allSettled([
+    fetchGoogleBooks(q),
+    fetchOpenLibrary(q)
+  ]);
+
+  const seen = new Set();
+  const merged = [];
+
+  for (const r of [gResults, olResults]) {
+    if (r.status === 'fulfilled') {
+      for (const book of r.value) {
+        const key = (book.isbn || (book.title + '|' + book.author)).toLowerCase();
+        if (!seen.has(key)) { seen.add(key); merged.push(book); }
+      }
+    }
   }
+
+  if (!merged.length) {
+    el.innerHTML = '<div class="empty-msg" style="padding:16px;">No results found. Try the original language title or author name.</div>';
+    return;
+  }
+
+  el.innerHTML = merged.map(b => {
+    const already = books.find(x => (b.isbn && x.isbn === b.isbn) || x.title.toLowerCase() === b.title.toLowerCase());
+    const bookData = JSON.stringify(b).replace(/"/g, '&quot;');
+    return `
+      <div class="gbook-item">
+        ${b.cover_url ? `<img src="${esc(b.cover_url)}" alt="" onerror="this.outerHTML='<div class=gbook-placeholder>📖</div>'">` : `<div class="gbook-placeholder">📖</div>`}
+        <div class="gbook-info">
+          <div class="gbook-title">${esc(b.title)}</div>
+          ${b.author ? `<div class="gbook-author">${esc(b.author)}</div>` : ''}
+          ${b.isbn   ? `<div class="gbook-isbn">${esc(b.isbn)}</div>` : ''}
+          <div style="font-size:10px;color:var(--hint);margin-top:3px;">${b._source}</div>
+        </div>
+        <div class="gbook-actions">
+          ${already
+            ? `<span class="already-badge">In library (${already.status})</span>`
+            : `<button class="add-as-btn read-btn"  onclick='addFromGoogle(${bookData},"read")'    >+ Read</button>
+               <button class="add-as-btn"            onclick='addFromGoogle(${bookData},"unread")'  >+ Unread</button>
+               <button class="add-as-btn wish-btn"   onclick='addFromGoogle(${bookData},"wishlist")'>+ Wishlist</button>`
+          }
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function fetchGoogleBooks(q) {
+  const keyParam = GOOGLE_BOOKS_KEY ? '&key=' + GOOGLE_BOOKS_KEY : '';
+  const url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=8' + keyParam;
+  const res = await fetch(url, { mode: 'cors' });
+  if (!res.ok) return [];
+  const data = await res.json();
+  if (!data.items) return [];
+  return data.items.map(item => {
+    const info = item.volumeInfo || {};
+    const ids  = info.industryIdentifiers || [];
+    const isbn = ((ids.find(i => i.type === 'ISBN_13') || ids.find(i => i.type === 'ISBN_10') || {})).identifier || '';
+    const raw  = info.imageLinks ? (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail || '') : '';
+    const cover = raw.replace(/^http:\/\//i, 'https://').replace('&edge=curl','').replace('zoom=1','zoom=2');
+    return { title: info.title || 'Unknown', author: (info.authors||[]).join(', ') || null, isbn: isbn || null, cover_url: cover || null, _source: 'Google Books' };
+  });
+}
+
+async function fetchOpenLibrary(q) {
+  const url = 'https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=8&fields=title,author_name,isbn,cover_i';
+  const res = await fetch(url, { mode: 'cors' });
+  if (!res.ok) return [];
+  const data = await res.json();
+  if (!data.docs) return [];
+  return data.docs.map(doc => {
+    const isbn = (doc.isbn && doc.isbn[0]) ? doc.isbn[0] : null;
+    const cover = doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null;
+    return { title: doc.title || 'Unknown', author: (doc.author_name||[]).join(', ') || null, isbn, cover_url: cover, _source: 'Open Library' };
+  });
 }
 
 function addFromGoogle(data, status) {
