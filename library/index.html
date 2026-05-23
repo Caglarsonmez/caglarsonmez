@@ -489,7 +489,11 @@ async function fetchBooks() {
     books = data || [];
     updateStats();
     renderLibrary();
-  } catch(e) { toast('Fetch error: ' + e.message); }
+    toast('Library loaded — ' + books.length + ' book(s)');
+  } catch(e) {
+    toast('Fetch error: ' + e.message);
+    console.error('Supabase fetch error:', e);
+  }
 }
 
 // ── Library rendering ─────────────────────────────────────────────
@@ -619,20 +623,24 @@ async function searchGbooks(q) {
   const el = document.getElementById('gbooks-results');
   el.innerHTML = '<div class="empty-msg" style="padding:16px;">Searching…</div>';
   try {
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=8`);
+    const url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=8&langRestrict=en';
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) { el.innerHTML = '<div class="empty-msg" style="padding:16px;">API error ' + res.status + '</div>'; return; }
     const data = await res.json();
     if (!data.items || !data.items.length) { el.innerHTML = '<div class="empty-msg" style="padding:16px;">No results found.</div>'; return; }
     el.innerHTML = data.items.map(item => {
-      const info = item.volumeInfo || {};
+      const info   = item.volumeInfo || {};
       const title  = info.title || 'Unknown title';
       const author = (info.authors || []).join(', ');
-      const isbn   = ((info.industryIdentifiers || []).find(i => i.type === 'ISBN_13') || {}).identifier || '';
-      const cover  = info.imageLinks ? (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail || '').replace('http://', 'https://') : '';
+      const ids    = info.industryIdentifiers || [];
+      const isbn   = ((ids.find(i => i.type === 'ISBN_13') || ids.find(i => i.type === 'ISBN_10') || {})).identifier || '';
+      const rawCover = info.imageLinks ? (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail || '') : '';
+      const cover  = rawCover.replace(/^http:\/\//i, 'https://').replace('&edge=curl', '').replace('zoom=1', 'zoom=2');
       const already = books.find(b => (isbn && b.isbn === isbn) || b.title.toLowerCase() === title.toLowerCase());
       const bookData = JSON.stringify({ title, author: author || null, isbn: isbn || null, cover_url: cover || null }).replace(/"/g, '&quot;');
       return `
         <div class="gbook-item">
-          ${cover ? `<img src="${esc(cover)}" alt="">` : `<div class="gbook-placeholder">📖</div>`}
+          ${cover ? `<img src="${esc(cover)}" alt="" onerror="this.outerHTML='<div class=gbook-placeholder>📖</div>'">` : `<div class="gbook-placeholder">📖</div>`}
           <div class="gbook-info">
             <div class="gbook-title">${esc(title)}</div>
             ${author ? `<div class="gbook-author">${esc(author)}</div>` : ''}
@@ -648,7 +656,10 @@ async function searchGbooks(q) {
           </div>
         </div>`;
     }).join('');
-  } catch(e) { el.innerHTML = '<div class="empty-msg" style="padding:16px;">Search failed.</div>'; }
+  } catch(e) {
+    el.innerHTML = '<div class="empty-msg" style="padding:16px;">Search failed: ' + e.message + '</div>';
+    console.error('Google Books error:', e);
+  }
 }
 
 function addFromGoogle(data, status) {
