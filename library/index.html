@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Library</title>
+<style>
+  /* ── Reset & tokens ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #fafaf8;
+    --surface:   #ffffff;
+    --border:    #e8e6e1;
+    --border-md: #d4d0c8;
+    --text:      #1a1a18;
+    --muted:     #6b6860;
+    --hint:      #a09d96;
+    --accent:    #2d5a3d;
+    --accent-lt: #edf3ef;
+    --amber:     #92600a;
+    --amber-lt:  #fef3e2;
+    --blue:      #1d4e89;
+    --blue-lt:   #eaf0f8;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --font: 'Georgia', 'Times New Roman', serif;
+    --sans: system-ui, -apple-system, sans-serif;
+    --mono: 'Menlo', 'Consolas', monospace;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── Lock screen ── */
+  #lock-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  .lock-box {
+    width: 320px;
+    text-align: center;
+  }
+  .lock-box h1 {
+    font-family: var(--font);
+    font-size: 26px;
+    font-weight: normal;
+    letter-spacing: -0.3px;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .lock-box p { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+  .lock-box input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-family: var(--sans);
+    background: var(--surface);
+    color: var(--text);
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .lock-box input:focus { border-color: var(--accent); }
+  .lock-box button {
+    width: 100%;
+    padding: 10px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .lock-box button:hover { opacity: 0.88; }
+  .lock-error { font-size: 12px; color: #b84040; margin-top: 8px; display: none; }
+
+  /* ── App shell ── */
+  #app { display: none; max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  /* ── Header ── */
+  .app-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .app-header h1 {
+    font-family: var(--font);
+    font-size: 28px;
+    font-weight: normal;
+    color: var(--text);
+    letter-spacing: -0.4px;
+  }
+  .header-stats { display: flex; gap: 20px; }
+  .stat-item { text-align: right; }
+  .stat-num { font-size: 20px; font-weight: 600; color: var(--text); line-height: 1; }
+  .stat-lbl { font-size: 11px; color: var(--hint); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 2px; margin-bottom: 28px; background: var(--border); border-radius: var(--radius-md); padding: 3px; }
+  .tab {
+    flex: 1; text-align: center; padding: 8px 10px;
+    font-size: 13px; font-family: var(--sans); cursor: pointer;
+    border: none; background: transparent; color: var(--muted);
+    border-radius: 8px; transition: background 0.15s, color 0.15s;
+  }
+  .tab.active { background: var(--surface); color: var(--text); font-weight: 500; }
+
+  /* ── Panels ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Search bar ── */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-wrap input {
+    width: 100%; padding: 11px 16px 11px 42px;
+    border: 1px solid var(--border-md); border-radius: var(--radius-md);
+    font-size: 15px; font-family: var(--sans); background: var(--surface);
+    color: var(--text); outline: none; transition: border-color 0.15s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--hint); pointer-events: none; }
+
+  /* ── Filter pills ── */
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+  .pill {
+    padding: 5px 14px; border-radius: 99px;
+    font-size: 12px; cursor: pointer; border: 1px solid var(--border-md);
+    background: var(--surface); color: var(--muted); transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .pill.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+  /* ── Book list ── */
+  .book-list { display: flex; flex-direction: column; gap: 1px; }
+  .book-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 14px 16px;
+    display: flex; gap: 14px; align-items: flex-start;
+    transition: border-color 0.15s;
+  }
+  .book-item:hover { border-color: var(--border-md); }
+  .book-cover {
+    width: 48px; height: 68px; flex-shrink: 0;
+    border-radius: var(--radius-sm); object-fit: cover;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .book-cover-placeholder {
+    width: 48px; height: 68px; flex-shrink: 0;
+    border-radius: var(--radius-sm); background: var(--bg);
+    border: 1px solid var(--border); display: flex; align-items: center;
+    justify-content: center; color: var(--hint); font-size: 18px;
+  }
+  .book-info { flex: 1; min-width: 0; }
+  .book-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .book-author { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .book-isbn { font-size: 11px; color: var(--hint); font-family: var(--mono); }
+  .book-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .status-badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 99px; font-weight: 500;
+  }
+  .status-badge.read    { background: var(--accent-lt); color: var(--accent); }
+  .status-badge.unread  { background: var(--bg); color: var(--muted); border: 1px solid var(--border-md); }
+  .status-badge.wishlist{ background: var(--amber-lt); color: var(--amber); }
+  .book-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+  .action-btn {
+    padding: 5px 10px; border: 1px solid var(--border-md); border-radius: var(--radius-sm);
+    font-size: 12px; font-family: var(--sans); background: var(--surface);
+    color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .action-btn:hover { background: var(--bg); color: var(--text); }
+  .action-btn.del { color: #b84040; border-color: #e8c8c8; }
+  .action-btn.del:hover { background: #fdf0f0; }
+
+  /* ── Status selector ── */
+  .status-select {
+    font-size: 12px; padding: 5px 8px; border: 1px solid var(--border-md);
+    border-radius: var(--radius-sm); background: var(--surface); color: var(--text);
+    font-family: var(--sans); cursor: pointer; outline: none;
+  }
+
+  /* ── Empty / Loading ── */
+  .empty-msg { text-align: center; padding: 48px 20px; color: var(--hint); font-size: 14px; }
+
+  /* ── Add panel / Google search ── */
+  .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--hint); margin-bottom: 10px; }
+
+  /* ── Google results ── */
+  .gbooks-results { display: flex; flex-direction: column; gap: 1px; margin-bottom: 24px; }
+  .gbook-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 12px 14px;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .gbook-item img { width: 40px; height: 56px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
+  .gbook-item .gbook-placeholder { width: 40px; height: 56px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--hint); font-size: 14px; }
+  .gbook-info { flex: 1; min-width: 0; }
+  .gbook-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .gbook-author { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .gbook-isbn { font-size: 11px; color: var(--hint); font-family: var(--mono); margin-top: 4px; }
+  .gbook-actions { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; flex-shrink: 0; }
+  .add-as-btn {
+    font-size: 11px; padding: 4px 10px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border-md); background: var(--surface); cursor: pointer;
+    font-family: var(--sans); color: var(--muted); white-space: nowrap; transition: all 0.15s;
+  }
+  .add-as-btn:hover { background: var(--bg); color: var(--text); }
+  .add-as-btn.read-btn    { border-color: #b2cebb; color: var(--accent); }
+  .add-as-btn.read-btn:hover { background: var(--accent-lt); }
+  .add-as-btn.wish-btn    { border-color: #e0c97a; color: var(--amber); }
+  .add-as-btn.wish-btn:hover { background: var(--amber-lt); }
+  .already-badge { font-size: 11px; color: var(--accent); background: var(--accent-lt); padding: 4px 10px; border-radius: var(--radius-sm); }
+
+  /* ── Manual add form ── */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .form-row.full { grid-template-columns: 1fr; }
+  .form-field { display: flex; flex-direction: column; gap: 4px; }
+  .form-field label { font-size: 12px; color: var(--muted); }
+  .form-field input, .form-field select {
+    padding: 9px 12px; border: 1px solid var(--border-md); border-radius: var(--radius-sm);
+    font-size: 14px; font-family: var(--sans); background: var(--surface); color: var(--text);
+    outline: none; transition: border-color 0.15s;
+  }
+  .form-field input:focus, .form-field select:focus { border-color: var(--accent); }
+  .submit-btn {
+    margin-top: 14px; width: 100%; padding: 11px;
+    background: var(--accent); color: #fff; border: none;
+    border-radius: var(--radius-md); font-size: 14px; font-family: var(--sans);
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .submit-btn:hover { opacity: 0.88; }
+
+  /* ── Divider ── */
+  .or-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; }
+  .or-divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+  .or-divider span { font-size: 12px; color: var(--hint); }
+
+  /* ── Config panel ── */
+  .config-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; }
+  .config-card h2 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+  .config-card p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .config-card pre { font-size: 12px; font-family: var(--mono); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 20px; color: var(--text); overflow-x: auto; white-space: pre; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px);
+    background: var(--text); color: #fff; font-size: 13px; padding: 10px 20px;
+    border-radius: 99px; opacity: 0; transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; white-space: nowrap; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Responsive ── */
+  @media (max-width: 540px) {
+    .form-row { grid-template-columns: 1fr; }
+    .app-header { flex-direction: column; gap: 12px; }
+    .header-stats { justify-content: flex-start; }
+    .book-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Lock screen ── -->
+<div id="lock-screen">
+  <div class="lock-box">
+    <h1>My Library</h1>
+    <p>Private collection · Enter password to continue</p>
+    <input type="password" id="pw-input" placeholder="Password" autocomplete="current-password" />
+    <button onclick="unlock()">Enter</button>
+    <p class="lock-error" id="lock-error">Wrong password. Try again.</p>
+  </div>
+</div>
+
+<!-- ── App ── -->
+<div id="app">
+  <div class="app-header">
+    <h1>My Library</h1>
+    <div class="header-stats">
+      <div class="stat-item">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-lbl">Books</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="stat-read">0</div>
+        <div class="stat-lbl">Read</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="stat-wish">0</div>
+        <div class="stat-lbl">Wishlist</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('library', this)">Library</button>
+    <button class="tab" onclick="switchTab('add', this)">Add Book</button>
+    <button class="tab" onclick="switchTab('config', this)">Settings</button>
+  </div>
+
+  <!-- ── Library tab ── -->
+  <div class="panel active" id="panel-library">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="lib-search" placeholder="Search your library…" oninput="renderLibrary()" />
+    </div>
+    <div class="filters" id="filter-pills">
+      <span class="pill active" onclick="setFilter('all', this)">All</span>
+      <span class="pill" onclick="setFilter('unread', this)">Unread</span>
+      <span class="pill" onclick="setFilter('read', this)">Read</span>
+      <span class="pill" onclick="setFilter('wishlist', this)">Wishlist</span>
+    </div>
+    <div class="book-list" id="book-list"></div>
+    <div class="empty-msg" id="lib-empty" style="display:none;">Nothing here yet.</div>
+  </div>
+
+  <!-- ── Add tab ── -->
+  <div class="panel" id="panel-add">
+    <div class="section-label">Search Google Books</div>
+    <div class="search-wrap" style="margin-bottom:12px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="gbooks-search" placeholder="Title, author, or ISBN…" oninput="debounceGbooks()" />
+    </div>
+    <div class="gbooks-results" id="gbooks-results"></div>
+
+    <div class="or-divider"><hr><span>or add manually</span><hr></div>
+
+    <div class="section-label">Manual entry</div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Title *</label>
+        <input type="text" id="m-title" placeholder="Book title" />
+      </div>
+      <div class="form-field">
+        <label>Author</label>
+        <input type="text" id="m-author" placeholder="Author name" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>ISBN</label>
+        <input type="text" id="m-isbn" placeholder="9780…" />
+      </div>
+      <div class="form-field">
+        <label>Status</label>
+        <select id="m-status">
+          <option value="unread">Unread</option>
+          <option value="read">Read</option>
+          <option value="wishlist">Wishlist</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-field">
+        <label>Cover image URL (optional)</label>
+        <input type="text" id="m-cover" placeholder="https://…" />
+      </div>
+    </div>
+    <button class="submit-btn" onclick="manualAdd()">Add to Library</button>
+  </div>
+
+  <!-- ── Config tab ── -->
+  <div class="panel" id="panel-config">
+    <div class="config-card">
+      <h2>Supabase connection</h2>
+      <p>Your data is stored in a Supabase Postgres table. Paste your credentials below — they're saved in localStorage on this device.</p>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Project URL</label>
+          <input type="text" id="cfg-url" placeholder="https://xxxx.supabase.co" />
+        </div>
+        <div class="form-field">
+          <label>Anon public key</label>
+          <input type="text" id="cfg-key" placeholder="eyJh…" />
+        </div>
+      </div>
+      <button class="submit-btn" onclick="saveConfig()">Save &amp; reconnect</button>
+
+      <div class="or-divider"><hr><span>SQL to create the table</span><hr></div>
+      <pre>create table books (
+  id uuid default gen_random_uuid() primary key,
+  title text not null,
+  author text,
+  isbn text,
+  cover_url text,
+  status text default 'unread',
+  created_at timestamptz default now()
+);</pre>
+      <p style="font-size:12px; color:var(--hint);">Run this once in Supabase → SQL Editor if you haven't already.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG — change these ──────────────────────────────────────────
+const CORRECT_PASSWORD = '19891989';   // ← set your password here
+// ──────────────────────────────────────────────────────────────────
+
+let books = [];
+let activeFilter = 'all';
+let sbUrl = '';
+let sbKey = '';
+let configured = false;
+let gbTimer = null;
+
+// ── Auth ──────────────────────────────────────────────────────────
+function unlock() {
+  const val = document.getElementById('pw-input').value;
+  if (val === CORRECT_PASSWORD) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadConfig();
+  } else {
+    document.getElementById('lock-error').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+
+// ── Tabs ──────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ── Supabase ──────────────────────────────────────────────────────
+function loadConfig() {
+  sbUrl = localStorage.getItem('lib_sb_url') || '';
+  sbKey = localStorage.getItem('lib_sb_key') || '';
+  if (sbUrl && sbKey) {
+    configured = true;
+    document.getElementById('cfg-url').value = sbUrl;
+    document.getElementById('cfg-key').value = sbKey;
+    fetchBooks();
+  } else {
+    renderLibrary();
+  }
+}
+
+function saveConfig() {
+  sbUrl = document.getElementById('cfg-url').value.trim().replace(/\/$/, '');
+  sbKey = document.getElementById('cfg-key').value.trim();
+  if (!sbUrl || !sbKey) { toast('Enter both URL and key'); return; }
+  localStorage.setItem('lib_sb_url', sbUrl);
+  localStorage.setItem('lib_sb_key', sbKey);
+  configured = true;
+  toast('Saved — fetching library…');
+  fetchBooks();
+}
+
+async function sb(path, opts = {}) {
+  const res = await fetch(`${sbUrl}/rest/v1/${path}`, {
+    headers: {
+      'apikey': sbKey,
+      'Authorization': 'Bearer ' + sbKey,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...(opts.headers || {})
+    },
+    method: opts.method || 'GET',
+    body: opts.body || undefined
+  });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || res.statusText); }
+  return res.status === 204 ? null : res.json();
+}
+
+async function fetchBooks() {
+  if (!configured) { renderLibrary(); return; }
+  try {
+    const data = await sb('books?order=created_at.desc');
+    books = data || [];
+    updateStats();
+    renderLibrary();
+  } catch(e) { toast('Fetch error: ' + e.message); }
+}
+
+// ── Library rendering ─────────────────────────────────────────────
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderLibrary();
+}
+
+function renderLibrary() {
+  const q = (document.getElementById('lib-search').value || '').toLowerCase();
+  let visible = books.filter(b => {
+    const matchFilter = activeFilter === 'all' || b.status === activeFilter;
+    const matchQ = !q || b.title.toLowerCase().includes(q) || (b.author || '').toLowerCase().includes(q) || (b.isbn || '').includes(q);
+    return matchFilter && matchQ;
+  });
+
+  const list = document.getElementById('book-list');
+  const empty = document.getElementById('lib-empty');
+
+  if (visible.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    empty.textContent = books.length === 0 ? 'Your library is empty. Add some books!' : 'No books match this filter.';
+    return;
+  }
+  empty.style.display = 'none';
+
+  list.innerHTML = visible.map(b => `
+    <div class="book-item">
+      ${b.cover_url
+        ? `<img class="book-cover" src="${esc(b.cover_url)}" alt="" onerror="this.outerHTML='<div class=book-cover-placeholder>📖</div>'">`
+        : `<div class="book-cover-placeholder">📖</div>`}
+      <div class="book-info">
+        <div class="book-title" title="${esc(b.title)}">${esc(b.title)}</div>
+        ${b.author ? `<div class="book-author">${esc(b.author)}</div>` : ''}
+        ${b.isbn   ? `<div class="book-isbn">${esc(b.isbn)}</div>` : ''}
+        <div class="book-meta">
+          <span class="status-badge ${b.status}">${b.status}</span>
+        </div>
+      </div>
+      <div class="book-actions">
+        <select class="status-select" onchange="updateStatus('${b.id}', this.value)">
+          <option value="unread"   ${b.status==='unread'   ?'selected':''}>Unread</option>
+          <option value="read"     ${b.status==='read'     ?'selected':''}>Read</option>
+          <option value="wishlist" ${b.status==='wishlist' ?'selected':''}>Wishlist</option>
+        </select>
+        <button class="action-btn del" onclick="deleteBook('${b.id}')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = books.length;
+  document.getElementById('stat-read').textContent  = books.filter(b => b.status === 'read').length;
+  document.getElementById('stat-wish').textContent  = books.filter(b => b.status === 'wishlist').length;
+}
+
+// ── Book actions ──────────────────────────────────────────────────
+async function updateStatus(id, status) {
+  const idx = books.findIndex(b => b.id === id);
+  if (idx === -1) return;
+  if (configured) {
+    try { await sb(`books?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status }), prefer: 'return=minimal' }); }
+    catch(e) { toast('Update failed'); return; }
+  }
+  books[idx].status = status;
+  updateStats();
+  renderLibrary();
+}
+
+async function deleteBook(id) {
+  if (!confirm('Remove this book from your library?')) return;
+  if (configured) {
+    try { await sb(`books?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' }); }
+    catch(e) { toast('Delete failed: ' + e.message); return; }
+  }
+  books = books.filter(b => b.id !== id);
+  updateStats();
+  renderLibrary();
+  toast('Removed');
+}
+
+// ── Add book (manual) ────────────────────────────────────────────
+async function manualAdd() {
+  const title = document.getElementById('m-title').value.trim();
+  if (!title) { toast('Title is required'); return; }
+  const book = {
+    title,
+    author:    document.getElementById('m-author').value.trim() || null,
+    isbn:      document.getElementById('m-isbn').value.trim()   || null,
+    cover_url: document.getElementById('m-cover').value.trim()  || null,
+    status:    document.getElementById('m-status').value
+  };
+  await addBookRecord(book);
+  ['m-title','m-author','m-isbn','m-cover'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-status').value = 'unread';
+}
+
+async function addBookRecord(book) {
+  if (configured) {
+    try {
+      const [created] = await sb('books', { method: 'POST', body: JSON.stringify(book) });
+      books.unshift(created);
+    } catch(e) { toast('Add failed: ' + e.message); return; }
+  } else {
+    book.id = crypto.randomUUID();
+    book.created_at = new Date().toISOString();
+    books.unshift(book);
+  }
+  updateStats();
+  renderLibrary();
+  toast(`"${book.title}" added as ${book.status}`);
+}
+
+// ── Google Books search ───────────────────────────────────────────
+function debounceGbooks() {
+  clearTimeout(gbTimer);
+  const q = document.getElementById('gbooks-search').value.trim();
+  if (!q) { document.getElementById('gbooks-results').innerHTML = ''; return; }
+  gbTimer = setTimeout(() => searchGbooks(q), 420);
+}
+
+async function searchGbooks(q) {
+  const el = document.getElementById('gbooks-results');
+  el.innerHTML = '<div class="empty-msg" style="padding:16px;">Searching…</div>';
+  try {
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=8`);
+    const data = await res.json();
+    if (!data.items || !data.items.length) { el.innerHTML = '<div class="empty-msg" style="padding:16px;">No results found.</div>'; return; }
+    el.innerHTML = data.items.map(item => {
+      const info = item.volumeInfo || {};
+      const title  = info.title || 'Unknown title';
+      const author = (info.authors || []).join(', ');
+      const isbn   = ((info.industryIdentifiers || []).find(i => i.type === 'ISBN_13') || {}).identifier || '';
+      const cover  = info.imageLinks ? (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail || '').replace('http://', 'https://') : '';
+      const already = books.find(b => (isbn && b.isbn === isbn) || b.title.toLowerCase() === title.toLowerCase());
+      const bookData = JSON.stringify({ title, author: author || null, isbn: isbn || null, cover_url: cover || null }).replace(/"/g, '&quot;');
+      return `
+        <div class="gbook-item">
+          ${cover ? `<img src="${esc(cover)}" alt="">` : `<div class="gbook-placeholder">📖</div>`}
+          <div class="gbook-info">
+            <div class="gbook-title">${esc(title)}</div>
+            ${author ? `<div class="gbook-author">${esc(author)}</div>` : ''}
+            ${isbn   ? `<div class="gbook-isbn">${isbn}</div>` : ''}
+          </div>
+          <div class="gbook-actions">
+            ${already
+              ? `<span class="already-badge">In library (${already.status})</span>`
+              : `<button class="add-as-btn read-btn"  onclick='addFromGoogle(${bookData},"read")'    >+ Read</button>
+                 <button class="add-as-btn"            onclick='addFromGoogle(${bookData},"unread")'  >+ Unread</button>
+                 <button class="add-as-btn wish-btn"   onclick='addFromGoogle(${bookData},"wishlist")'>+ Wishlist</button>`
+            }
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty-msg" style="padding:16px;">Search failed.</div>'; }
+}
+
+function addFromGoogle(data, status) {
+  const book = typeof data === 'string' ? JSON.parse(data) : data;
+  book.status = status;
+  addBookRecord(book);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
