@@ -264,6 +264,42 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ── Scanner ── */
+  #scan-viewport {
+    position: relative; width: 100%; max-width: 480px; margin: 0 auto;
+    border-radius: var(--radius-lg); overflow: hidden;
+    background: #000; aspect-ratio: 3/4;
+  }
+  #scan-video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .scan-overlay {
+    position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center; pointer-events: none;
+  }
+  .scan-frame {
+    width: 65%; aspect-ratio: 3/1;
+    border: 2px solid rgba(255,255,255,0.8);
+    border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+  }
+  .scan-hint {
+    position: absolute; bottom: 16px; left: 0; right: 0;
+    text-align: center; color: rgba(255,255,255,0.85);
+    font-size: 13px;
+  }
+  .scan-result-bar {
+    margin-top: 16px; padding: 12px 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); font-size: 13px; color: var(--muted);
+    min-height: 48px; display: flex; align-items: center; gap: 10px;
+  }
+  .scan-controls { display: flex; gap: 8px; margin-top: 12px; }
+  .scan-controls button { flex: 1; padding: 10px; border: 1px solid var(--border-md);
+    border-radius: var(--radius-md); font-size: 13px; font-family: var(--sans);
+    background: var(--surface); color: var(--muted); cursor: pointer; }
+  .scan-controls button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  #scan-lookup-results { margin-top: 16px; }
+
   /* ── Responsive ── */
   @media (max-width: 540px) {
     .form-row { grid-template-columns: 1fr; }
@@ -310,6 +346,7 @@
     <button class="tab active" onclick="switchTab('library', this)">Library</button>
     <button class="tab" onclick="switchTab('add', this)">Add Book</button>
     <button class="tab" onclick="switchTab('config', this)">Settings</button>
+    <button class="tab" onclick="switchTab('scan', this)">Scan</button>
   </div>
 
   <!-- ── Library tab ── -->
@@ -366,6 +403,26 @@
     </div>
 
     <button class="submit-btn" onclick="manualAdd()">Add to Library</button>
+  </div>
+
+  <!-- ── Scan tab ── -->
+  <div class="panel" id="panel-scan">
+    <div id="scan-viewport" style="display:none;">
+      <video id="scan-video" autoplay playsinline muted></video>
+      <div class="scan-overlay"><div class="scan-frame"></div></div>
+      <div class="scan-hint">Align barcode within the frame</div>
+    </div>
+    <div id="scan-start-area" style="text-align:center;padding:32px 0;">
+      <div style="font-size:48px;margin-bottom:16px;">📷</div>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Point your camera at a book's barcode to look it up instantly.</p>
+      <button onclick="startScanner()" style="padding:12px 32px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-md);font-size:15px;font-family:var(--sans);cursor:pointer;">Start Camera</button>
+    </div>
+    <div class="scan-result-bar" id="scan-status" style="display:none;"></div>
+    <div class="scan-controls" id="scan-controls" style="display:none;">
+      <button onclick="stopScanner()">Stop camera</button>
+      <button onclick="resetScanner()">Scan another</button>
+    </div>
+    <div id="scan-lookup-results"></div>
   </div>
 
   <!-- ── Config tab ── -->
@@ -718,6 +775,177 @@ function toast(msg) {
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 2800);
 }
+
+// ── Barcode Scanner ───────────────────────────────────────────────
+let scanStream = null;
+let scanAnimFrame = null;
+let scanDetector = null;
+let lastScanned = null;
+
+async function startScanner() {
+  // Check support
+  if (!('BarcodeDetector' in window)) {
+    setScanStatus('⚠️ BarcodeDetector not supported on this browser. Try Safari on iOS 17+.');
+    return;
+  }
+
+  const formats = await BarcodeDetector.getSupportedFormats();
+  if (!formats.includes('ean_13') && !formats.includes('ean_8')) {
+    setScanStatus('⚠️ EAN barcode format not supported on this device.');
+    return;
+  }
+
+  scanDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+  } catch(e) {
+    setScanStatus('⚠️ Camera access denied. Please allow camera in Safari settings.');
+    return;
+  }
+
+  const video = document.getElementById('scan-video');
+  video.srcObject = scanStream;
+  await video.play();
+
+  document.getElementById('scan-start-area').style.display = 'none';
+  document.getElementById('scan-viewport').style.display = 'block';
+  document.getElementById('scan-status').style.display = 'flex';
+  document.getElementById('scan-controls').style.display = 'flex';
+  setScanStatus('🔍 Scanning… hold barcode steady in the frame');
+
+  scanLoop(video);
+}
+
+function scanLoop(video) {
+  if (!scanStream) return;
+  scanAnimFrame = requestAnimationFrame(() => scanLoop(video));
+
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+  scanDetector.detect(video).then(barcodes => {
+    if (!barcodes.length) return;
+    const code = barcodes[0].rawValue;
+    if (code === lastScanned) return;
+    lastScanned = code;
+
+    // Must look like an ISBN (10 or 13 digits, starting with 978/979 for EAN-13)
+    const clean = code.replace(/\D/g, '');
+    if (clean.length < 10) return;
+
+    onBarcodeDetected(clean);
+  }).catch(() => {});
+}
+
+async function onBarcodeDetected(isbn) {
+  // Pause scanning
+  cancelAnimationFrame(scanAnimFrame);
+
+  // Haptic feedback on iOS
+  if (navigator.vibrate) navigator.vibrate(100);
+
+  setScanStatus('✓ Barcode detected: ' + isbn + ' — looking up…');
+  document.getElementById('scan-lookup-results').innerHTML = '';
+
+  // Reuse existing search functions
+  const [gResults, olResults] = await Promise.allSettled([
+    fetchGoogleBooks('isbn:' + isbn),
+    fetchOpenLibrary(isbn)
+  ]);
+
+  const results = [];
+  const seen = new Set();
+  for (const r of [gResults, olResults]) {
+    if (r.status === 'fulfilled') {
+      for (const b of r.value) {
+        const key = (b.isbn || b.title).toLowerCase();
+        if (!seen.has(key)) { seen.add(key); results.push(b); }
+      }
+    }
+  }
+
+  if (!results.length) {
+    setScanStatus('No book found for ISBN ' + isbn + '. Try adding manually.');
+    resumeScanning();
+    return;
+  }
+
+  setScanStatus('Found ' + results.length + ' result(s) — add to library:');
+
+  const el = document.getElementById('scan-lookup-results');
+  var html = '';
+  for (var i = 0; i < results.length; i++) {
+    var b = results[i];
+    var already = books.find(function(x) { return (b.isbn && x.isbn === b.isbn) || x.title.toLowerCase() === b.title.toLowerCase(); });
+    var actionsHtml;
+    if (already) {
+      actionsHtml = '<span class="already-badge">In library (' + already.status + ')</span>';
+    } else {
+      actionsHtml = '<button class="add-as-btn read-btn"   onclick="addScanResult(' + i + ',this)" data-status="read">+ Read</button>'
+                  + '<button class="add-as-btn"             onclick="addScanResult(' + i + ',this)" data-status="unread">+ Unread</button>'
+                  + '<button class="add-as-btn wish-btn"    onclick="addScanResult(' + i + ',this)" data-status="wishlist">+ Wishlist</button>';
+    }
+    html += '<div class="gbook-item" style="margin-top:8px;">'
+          + '<div class="gbook-info">'
+          + '<div class="gbook-title">' + esc(b.title) + '</div>'
+          + (b.author ? '<div class="gbook-author">' + esc(b.author) + '</div>' : '')
+          + (b.isbn   ? '<div class="gbook-isbn">'   + esc(b.isbn)   + '</div>' : '')
+          + '<div style="font-size:10px;color:var(--hint);margin-top:2px;">' + b._source + '</div>'
+          + '</div>'
+          + '<div class="gbook-actions">' + actionsHtml + '</div>'
+          + '</div>';
+  }
+    window._scanResults = results;
+  el.innerHTML = html;
+}
+
+function resumeScanning() {
+  lastScanned = null;
+  const video = document.getElementById('scan-video');
+  if (scanStream) scanLoop(video);
+}
+
+function resetScanner() {
+  lastScanned = null;
+  document.getElementById('scan-lookup-results').innerHTML = '';
+  setScanStatus('🔍 Scanning… hold barcode steady in the frame');
+  const video = document.getElementById('scan-video');
+  if (scanStream) scanLoop(video);
+}
+
+function stopScanner() {
+  cancelAnimationFrame(scanAnimFrame);
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  document.getElementById('scan-viewport').style.display = 'none';
+  document.getElementById('scan-start-area').style.display = 'block';
+  document.getElementById('scan-status').style.display = 'none';
+  document.getElementById('scan-controls').style.display = 'none';
+  document.getElementById('scan-lookup-results').innerHTML = '';
+  lastScanned = null;
+}
+
+// Stop camera when switching away from scan tab
+const _origSwitchTab = switchTab;
+switchTab = function(name, el) {
+  if (name !== 'scan' && scanStream) stopScanner();
+  _origSwitchTab(name, el);
+};
+
+function setScanStatus(msg) {
+  const el = document.getElementById('scan-status');
+  if (el) el.textContent = msg;
+}
+
+
+function addScanResult(idx, btn) {
+  if (!window._scanResults || !window._scanResults[idx]) return;
+  const book = Object.assign({}, window._scanResults[idx]);
+  book.status = btn.dataset ? btn.dataset.status : btn;
+  addBookRecord(book);
+}
+
 </script>
 </body>
 </html>
