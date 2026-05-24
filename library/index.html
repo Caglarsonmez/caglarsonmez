@@ -308,6 +308,7 @@
     .book-actions { flex-direction: column; }
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
 </head>
 <body>
 
@@ -776,80 +777,58 @@ function toast(msg) {
   el._t = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-// ── Barcode Scanner ───────────────────────────────────────────────
-let scanStream = null;
-let scanAnimFrame = null;
-let scanDetector = null;
-let lastScanned = null;
+// ── Barcode Scanner (ZXing) ──────────────────────────────────────
+let zxingReader = null;
+let scanActive  = false;
 
 async function startScanner() {
-  // Check support
-  if (!('BarcodeDetector' in window)) {
-    setScanStatus('⚠️ BarcodeDetector not supported on this browser. Try Safari on iOS 17+.');
+  setScanStatus('Starting camera…');
+  document.getElementById('scan-status').style.display = 'flex';
+
+  if (!window.ZXingBrowser) {
+    setScanStatus('⚠️ ZXing library not loaded. Check internet connection and reload.');
     return;
   }
-
-  const formats = await BarcodeDetector.getSupportedFormats();
-  if (!formats.includes('ean_13') && !formats.includes('ean_8')) {
-    setScanStatus('⚠️ EAN barcode format not supported on this device.');
-    return;
-  }
-
-  scanDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
 
   try {
-    scanStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    const devices = await ZXingBrowser.BrowserMultiFormatReader.listVideoInputDevices();
+    const backCam = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[devices.length - 1];
+    const deviceId = backCam ? backCam.deviceId : undefined;
+
+    zxingReader = new ZXingBrowser.BrowserMultiFormatReader();
+    scanActive = true;
+
+    document.getElementById('scan-start-area').style.display = 'none';
+    document.getElementById('scan-viewport').style.display  = 'block';
+    document.getElementById('scan-controls').style.display  = 'flex';
+    document.getElementById('scan-lookup-results').innerHTML = '';
+
+    setScanStatus('🔍 Scanning… hold barcode steady in the frame');
+
+    await zxingReader.decodeFromVideoDevice(deviceId, 'scan-video', function(result, err) {
+      if (!result || !scanActive) return;
+      scanActive = false;
+      if (navigator.vibrate) navigator.vibrate(100);
+      var raw = result.getText();
+      console.log('ZXing raw result:', raw);
+      onBarcodeDetected(raw.replace(/\D/g, ''));
     });
+
   } catch(e) {
-    setScanStatus('⚠️ Camera access denied. Please allow camera in Safari settings.');
-    return;
+    setScanStatus('Camera error: ' + e.message);
+    console.error('Scanner error:', e);
   }
-
-  const video = document.getElementById('scan-video');
-  video.srcObject = scanStream;
-  await video.play();
-
-  document.getElementById('scan-start-area').style.display = 'none';
-  document.getElementById('scan-viewport').style.display = 'block';
-  document.getElementById('scan-status').style.display = 'flex';
-  document.getElementById('scan-controls').style.display = 'flex';
-  setScanStatus('🔍 Scanning… hold barcode steady in the frame');
-
-  scanLoop(video);
-}
-
-function scanLoop(video) {
-  if (!scanStream) return;
-  scanAnimFrame = requestAnimationFrame(() => scanLoop(video));
-
-  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
-
-  scanDetector.detect(video).then(barcodes => {
-    if (!barcodes.length) return;
-    const code = barcodes[0].rawValue;
-    if (code === lastScanned) return;
-    lastScanned = code;
-
-    // Must look like an ISBN (10 or 13 digits, starting with 978/979 for EAN-13)
-    const clean = code.replace(/\D/g, '');
-    if (clean.length < 10) return;
-
-    onBarcodeDetected(clean);
-  }).catch(() => {});
 }
 
 async function onBarcodeDetected(isbn) {
-  // Pause scanning
-  cancelAnimationFrame(scanAnimFrame);
-
-  // Haptic feedback on iOS
-  if (navigator.vibrate) navigator.vibrate(100);
-
-  setScanStatus('✓ Barcode detected: ' + isbn + ' — looking up…');
+  if (!isbn || isbn.length < 8) {
+    setScanStatus('Could not read barcode. Try again.');
+    setTimeout(function() { scanActive = true; }, 1500);
+    return;
+  }
+  setScanStatus('✓ ISBN: ' + isbn + ' — looking up…');
   document.getElementById('scan-lookup-results').innerHTML = '';
 
-  // Reuse existing search functions
   const [gResults, olResults] = await Promise.allSettled([
     fetchGoogleBooks('isbn:' + isbn),
     fetchOpenLibrary(isbn)
@@ -859,8 +838,9 @@ async function onBarcodeDetected(isbn) {
   const seen = new Set();
   for (const r of [gResults, olResults]) {
     if (r.status === 'fulfilled') {
-      for (const b of r.value) {
-        const key = (b.isbn || b.title).toLowerCase();
+      for (var j = 0; j < r.value.length; j++) {
+        var b = r.value[j];
+        var key = (b.isbn || b.title).toLowerCase();
         if (!seen.has(key)) { seen.add(key); results.push(b); }
       }
     }
@@ -868,28 +848,27 @@ async function onBarcodeDetected(isbn) {
 
   if (!results.length) {
     setScanStatus('No book found for ISBN ' + isbn + '. Try adding manually.');
-    resumeScanning();
+    setTimeout(function() { scanActive = true; }, 2500);
     return;
   }
 
   setScanStatus('Found ' + results.length + ' result(s) — add to library:');
+  window._scanResults = results;
 
-  const el = document.getElementById('scan-lookup-results');
   var html = '';
   for (var i = 0; i < results.length; i++) {
     var b = results[i];
-    var already = books.find(function(x) { return (b.isbn && x.isbn === b.isbn) || x.title.toLowerCase() === b.title.toLowerCase(); });
-    var actionsHtml;
-    if (already) {
-      actionsHtml = '<span class="already-badge">In library (' + already.status + ')</span>';
-    } else {
-      actionsHtml = '<button class="add-as-btn read-btn"   onclick="addScanResult(' + i + ',this)" data-status="read">+ Read</button>'
-                  + '<button class="add-as-btn"             onclick="addScanResult(' + i + ',this)" data-status="unread">+ Unread</button>'
-                  + '<button class="add-as-btn wish-btn"    onclick="addScanResult(' + i + ',this)" data-status="wishlist">+ Wishlist</button>';
-    }
+    var already = books.find(function(x) {
+      return (b.isbn && x.isbn === b.isbn) || x.title.toLowerCase() === b.title.toLowerCase();
+    });
+    var actionsHtml = already
+      ? '<span class="already-badge">In library (' + already.status + ')</span>'
+      : '<button class="add-as-btn read-btn" onclick="addScanResult(' + i + ',this)" data-status="read">+ Read</button>'
+      + '<button class="add-as-btn"          onclick="addScanResult(' + i + ',this)" data-status="unread">+ Unread</button>'
+      + '<button class="add-as-btn wish-btn" onclick="addScanResult(' + i + ',this)" data-status="wishlist">+ Wishlist</button>';
     html += '<div class="gbook-item" style="margin-top:8px;">'
           + '<div class="gbook-info">'
-          + '<div class="gbook-title">' + esc(b.title) + '</div>'
+          + '<div class="gbook-title">'  + esc(b.title)  + '</div>'
           + (b.author ? '<div class="gbook-author">' + esc(b.author) + '</div>' : '')
           + (b.isbn   ? '<div class="gbook-isbn">'   + esc(b.isbn)   + '</div>' : '')
           + '<div style="font-size:10px;color:var(--hint);margin-top:2px;">' + b._source + '</div>'
@@ -897,44 +876,41 @@ async function onBarcodeDetected(isbn) {
           + '<div class="gbook-actions">' + actionsHtml + '</div>'
           + '</div>';
   }
-    window._scanResults = results;
-  el.innerHTML = html;
+  document.getElementById('scan-lookup-results').innerHTML = html;
 }
 
-function resumeScanning() {
-  lastScanned = null;
-  const video = document.getElementById('scan-video');
-  if (scanStream) scanLoop(video);
+function addScanResult(idx, btn) {
+  if (!window._scanResults || !window._scanResults[idx]) return;
+  var book = Object.assign({}, window._scanResults[idx]);
+  book.status = btn.dataset.status;
+  addBookRecord(book);
 }
 
 function resetScanner() {
-  lastScanned = null;
+  scanActive = true;
+  window._scanResults = [];
   document.getElementById('scan-lookup-results').innerHTML = '';
   setScanStatus('🔍 Scanning… hold barcode steady in the frame');
-  const video = document.getElementById('scan-video');
-  if (scanStream) scanLoop(video);
 }
 
 function stopScanner() {
-  cancelAnimationFrame(scanAnimFrame);
-  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
-  document.getElementById('scan-viewport').style.display = 'none';
+  scanActive = false;
+  if (zxingReader) { try { zxingReader.reset(); } catch(e) {} zxingReader = null; }
+  document.getElementById('scan-viewport').style.display   = 'none';
   document.getElementById('scan-start-area').style.display = 'block';
-  document.getElementById('scan-status').style.display = 'none';
-  document.getElementById('scan-controls').style.display = 'none';
+  document.getElementById('scan-status').style.display     = 'none';
+  document.getElementById('scan-controls').style.display   = 'none';
   document.getElementById('scan-lookup-results').innerHTML = '';
-  lastScanned = null;
 }
 
-// Stop camera when switching away from scan tab
-const _origSwitchTab = switchTab;
+var _origSwitchTab = switchTab;
 switchTab = function(name, el) {
-  if (name !== 'scan' && scanStream) stopScanner();
+  if (name !== 'scan' && zxingReader) stopScanner();
   _origSwitchTab(name, el);
 };
 
 function setScanStatus(msg) {
-  const el = document.getElementById('scan-status');
+  var el = document.getElementById('scan-status');
   if (el) el.textContent = msg;
 }
 
