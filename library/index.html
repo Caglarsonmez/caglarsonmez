@@ -137,6 +137,20 @@
     font-size: 12.5px; font-family: var(--sans); color: var(--muted); cursor: pointer; transition: all 0.15s;
   }
   .view-toggle button.active { background: var(--surface); color: var(--text); font-weight: 500; }
+  .export-menu-wrap { position: relative; }
+  .export-btn {
+    padding: 10px 14px; border: 1px solid var(--border-md); border-radius: var(--radius-md);
+    font-size: 13px; font-family: var(--sans); background: var(--surface); color: var(--text); cursor: pointer;
+  }
+  .export-btn:hover { border-color: var(--text); }
+  .export-menu {
+    display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 20;
+    background: var(--surface); border: 1px solid var(--border-md); border-radius: var(--radius-md);
+    box-shadow: 0 6px 20px rgba(0,0,0,.09); min-width: 175px; overflow: hidden;
+  }
+  .export-menu.open { display: block; }
+  .export-menu div { padding: 10px 14px; font-size: 13px; color: var(--text); cursor: pointer; }
+  .export-menu div:hover { background: var(--accent-lt); }
   @media (max-width: 640px) { .lib-controls-row { flex-direction: column; align-items: stretch; } .lib-controls-row .search-wrap { width: 100%; } }
 
   /* ── Search bar ── */
@@ -375,6 +389,7 @@
   }
 </style>
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -432,6 +447,13 @@
       <div class="view-toggle">
         <button id="view-list-btn" class="active" onclick="setLibraryView('list')">☰ List</button>
         <button id="view-grid-btn" onclick="setLibraryView('grid')">▦ Grid</button>
+      </div>
+      <div class="export-menu-wrap">
+        <button class="export-btn" onclick="toggleExportMenu(event)">⬇ Export</button>
+        <div class="export-menu" id="export-menu">
+          <div onclick="exportLibrary('csv')">Export as CSV</div>
+          <div onclick="exportLibrary('xlsx')">Export as Excel (.xlsx)</div>
+        </div>
       </div>
     </div>
     <div class="filters" id="filter-pills"></div>
@@ -800,6 +822,62 @@ function toggleGridItem(id) {
   const wasExpanded = el.classList.contains('expanded');
   document.querySelectorAll('.grid-item.expanded').forEach(x => x.classList.remove('expanded'));
   if (!wasExpanded) el.classList.add('expanded');
+}
+
+// ── Export ─────────────────────────────────────────────────────────
+function toggleExportMenu(ev) {
+  ev.stopPropagation();
+  document.getElementById('export-menu').classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  const m = document.getElementById('export-menu');
+  if (m) m.classList.remove('open');
+});
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportLibrary(format) {
+  const menu = document.getElementById('export-menu');
+  if (menu) menu.classList.remove('open');
+
+  if (!books.length) { toast('Library is empty — nothing to export'); return; }
+
+  const rows = sortBooks(books).map(b => ({
+    Title:  b.title || '',
+    Author: b.author || '',
+    Status: b.status ? (b.status.charAt(0).toUpperCase() + b.status.slice(1)) : ''
+  }));
+  const stamp = new Date().toISOString().slice(0, 10);
+
+  if (format === 'csv') {
+    const csvEscape = v => {
+      const s = String(v ?? '');
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const lines = [['Title', 'Author', 'Status'].join(',')]
+      .concat(rows.map(r => [r.Title, r.Author, r.Status].map(csvEscape).join(',')));
+    // Leading BOM so Excel renders Turkish characters (ç, ş, ğ, ı, ö, ü) correctly instead of mojibake
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    downloadBlob(blob, `library-${stamp}.csv`);
+  } else if (format === 'xlsx') {
+    if (typeof XLSX === 'undefined') { toast('Excel export failed to load — try CSV instead'); return; }
+    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Title', 'Author', 'Status'] });
+    ws['!cols'] = [{ wch: 42 }, { wch: 28 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Library');
+    XLSX.writeFile(wb, `library-${stamp}.xlsx`);
+  }
+
+  toast(`Exported ${rows.length} book(s)`);
 }
 
 function updateStats() {
