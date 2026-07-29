@@ -124,6 +124,21 @@
   .panel { display: none; }
   .panel.active { display: block; }
 
+  /* ── Library controls row ── */
+  .lib-controls-row { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .sort-select {
+    padding: 10px 12px; border: 1px solid var(--border-md); border-radius: var(--radius-md);
+    font-size: 13px; font-family: var(--sans); background: var(--surface); color: var(--text);
+    outline: none; cursor: pointer;
+  }
+  .view-toggle { display: flex; gap: 4px; background: var(--border); padding: 3px; border-radius: var(--radius-md); }
+  .view-toggle button {
+    padding: 7px 12px; border: none; background: transparent; border-radius: 7px;
+    font-size: 12.5px; font-family: var(--sans); color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .view-toggle button.active { background: var(--surface); color: var(--text); font-weight: 500; }
+  @media (max-width: 640px) { .lib-controls-row { flex-direction: column; align-items: stretch; } .lib-controls-row .search-wrap { width: 100%; } }
+
   /* ── Search bar ── */
   .search-wrap { position: relative; margin-bottom: 16px; }
   .search-wrap input {
@@ -144,6 +159,7 @@
     font-family: var(--sans);
   }
   .pill.active { background: var(--text); color: #fff; border-color: var(--text); }
+  .pill-count { opacity: 0.6; font-size: 11px; margin-left: 3px; }
 
   /* ── Book list ── */
   .book-list { display: flex; flex-direction: column; gap: 1px; }
@@ -161,10 +177,37 @@
   }
   .book-cover-placeholder {
     width: 48px; height: 68px; flex-shrink: 0;
-    border-radius: var(--radius-sm); background: var(--bg);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border); display: flex; align-items: center;
-    justify-content: center; color: var(--hint); font-size: 18px;
+    justify-content: center; font-size: 19px; font-weight: 600; font-family: var(--font);
   }
+
+  /* ── Grid / shelf view ── */
+  .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 18px 12px; }
+  .grid-item { cursor: pointer; }
+  .grid-cover-wrap { position: relative; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
+  .grid-item:hover .grid-cover-wrap { border-color: var(--border-md); }
+  .grid-cover { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+  .grid-cover-placeholder {
+    width: 100%; aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 600; font-family: var(--font);
+  }
+  .grid-status-dot {
+    position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--surface);
+  }
+  .grid-status-dot.read { background: var(--accent); }
+  .grid-status-dot.unread { background: var(--hint); }
+  .grid-status-dot.wishlist { background: var(--amber); }
+  .grid-title {
+    font-size: 12px; font-weight: 500; color: var(--text); margin-top: 7px; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .grid-author { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .grid-actions { display: none; flex-direction: column; gap: 5px; margin-top: 8px; }
+  .grid-item.expanded .grid-actions { display: flex; }
+  .grid-actions .status-select { width: 100%; font-size: 11px; padding: 5px 6px; }
+  .grid-actions .action-btn { width: 100%; font-size: 11px; padding: 5px 6px; text-align: center; }
   .book-info { flex: 1; min-width: 0; }
   .book-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .book-author { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
@@ -224,6 +267,13 @@
   .add-as-btn.wish-btn    { border-color: #e0c97a; color: var(--amber); }
   .add-as-btn.wish-btn:hover { background: var(--amber-lt); }
   .already-badge { font-size: 11px; color: var(--accent); background: var(--accent-lt); padding: 4px 10px; border-radius: var(--radius-sm); }
+  .fixcovers-bar-wrap { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .fixcovers-bar { height: 100%; width: 0%; background: var(--accent); transition: width .2s ease; }
+  .fixcovers-log { margin-top: 12px; max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .fixcovers-row { padding: 7px 10px; font-size: 12.5px; border-bottom: 1px solid var(--border); }
+  .fixcovers-row:last-child { border-bottom: none; }
+  .fixcovers-row.ok { color: var(--accent); }
+  .fixcovers-row.fail { color: var(--hint); }
 
   /* ── Bigger touch targets on phones ── */
   @media (max-width: 640px) {
@@ -364,21 +414,29 @@
     <button class="tab" onclick="switchTab('add', this)">Add Book</button>
     <button class="tab" onclick="switchTab('config', this)">Settings</button>
     <button class="tab" onclick="switchTab('scan', this)">Scan</button>
+    <button class="tab" onclick="switchTab('fixcovers', this)">Fix Covers</button>
   </div>
 
   <!-- ── Library tab ── -->
   <div class="panel active" id="panel-library">
-    <div class="search-wrap">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="lib-search" placeholder="Search your library…" oninput="renderLibrary()" />
+    <div class="lib-controls-row">
+      <div class="search-wrap" style="flex:1; margin-bottom:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="lib-search" placeholder="Search your library…" oninput="renderLibrary()" />
+      </div>
+      <select id="lib-sort" class="sort-select" onchange="renderLibrary()">
+        <option value="recent">Newest added</option>
+        <option value="title">Title A–Z</option>
+        <option value="author">Author A–Z</option>
+      </select>
+      <div class="view-toggle">
+        <button id="view-list-btn" class="active" onclick="setLibraryView('list')">☰ List</button>
+        <button id="view-grid-btn" onclick="setLibraryView('grid')">▦ Grid</button>
+      </div>
     </div>
-    <div class="filters" id="filter-pills">
-      <span class="pill active" onclick="setFilter('all', this)">All</span>
-      <span class="pill" onclick="setFilter('unread', this)">Unread</span>
-      <span class="pill" onclick="setFilter('read', this)">Read</span>
-      <span class="pill" onclick="setFilter('wishlist', this)">Wishlist</span>
-    </div>
+    <div class="filters" id="filter-pills"></div>
     <div class="book-list" id="book-list"></div>
+    <div class="book-grid" id="book-grid" style="display:none;"></div>
     <div class="empty-msg" id="lib-empty" style="display:none;">Nothing here yet.</div>
   </div>
 
@@ -470,6 +528,20 @@
   created_at timestamptz default now()
 );</pre>
       <p style="font-size:12px; color:var(--hint);">Run this once in Supabase → SQL Editor if you haven't already.</p>
+    </div>
+  </div>
+
+  <!-- ── Fix Covers tab ── -->
+  <div class="panel" id="panel-fixcovers">
+    <div class="config-card">
+      <h2>Fix missing covers</h2>
+      <p>Finds every book in your library with no cover image, looks it up on Google Books and Open Library (ISBN first, then title + author), and saves the best match automatically. Nothing to review — it just fills the gaps.</p>
+      <div id="fixcovers-summary" style="font-size:13px;color:var(--muted);margin:12px 0;"></div>
+      <button class="submit-btn" id="fixcovers-btn" onclick="runCoverFix()">Scan &amp; fix missing covers</button>
+      <div id="fixcovers-progress" style="display:none;margin-top:18px;">
+        <div class="fixcovers-bar-wrap"><div class="fixcovers-bar" id="fixcovers-bar"></div></div>
+        <div id="fixcovers-log" class="fixcovers-log"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -575,11 +647,63 @@ async function fetchBooks() {
 }
 
 // ── Library rendering ─────────────────────────────────────────────
+let libraryView = 'list';
+
 function setFilter(f, el) {
   activeFilter = f;
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
   renderLibrary();
+}
+
+function setLibraryView(view) {
+  libraryView = view;
+  document.getElementById('view-list-btn').classList.toggle('active', view === 'list');
+  document.getElementById('view-grid-btn').classList.toggle('active', view === 'grid');
+  renderLibrary();
+}
+
+// Deterministic pastel hue from a string, so the same book always gets the same placeholder color
+function hashHue(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360;
+  return h < 0 ? h + 360 : h;
+}
+
+function placeholderHTML(book, sizeClass) {
+  const letter = esc((book.title || '?').trim().charAt(0).toUpperCase());
+  const hue = hashHue(book.title || book.author || 'x');
+  return `<div class="${sizeClass}" style="background:hsl(${hue},40%,90%);color:hsl(${hue},45%,32%);">${letter}</div>`;
+}
+
+// If a stored cover_url 404s or otherwise fails to load, fall back to the colored placeholder tile
+function onCoverError(imgEl, id, sizeClass) {
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  imgEl.outerHTML = placeholderHTML(b, sizeClass);
+}
+
+function sortBooks(list) {
+  const sort = (document.getElementById('lib-sort') || {}).value || 'recent';
+  const copy = list.slice();
+  if (sort === 'title')  copy.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'tr'));
+  if (sort === 'author') copy.sort((a, b) => (a.author || '').localeCompare(b.author || '', 'tr'));
+  return copy; // 'recent' keeps the fetch order (created_at desc)
+}
+
+function renderFilterPills() {
+  const q = (document.getElementById('lib-search').value || '').toLowerCase();
+  const matched = books.filter(b =>
+    !q || b.title.toLowerCase().includes(q) || (b.author || '').toLowerCase().includes(q) || (b.isbn || '').includes(q)
+  );
+  const counts = {
+    all:      matched.length,
+    unread:   matched.filter(b => b.status === 'unread').length,
+    read:     matched.filter(b => b.status === 'read').length,
+    wishlist: matched.filter(b => b.status === 'wishlist').length,
+  };
+  const defs = [['all', 'All'], ['unread', 'Unread'], ['read', 'Read'], ['wishlist', 'Wishlist']];
+  document.getElementById('filter-pills').innerHTML = defs.map(([key, label]) =>
+    `<span class="pill ${activeFilter === key ? 'active' : ''}" onclick="setFilter('${key}', this)">${label} <span class="pill-count">${counts[key]}</span></span>`
+  ).join('');
 }
 
 function renderLibrary() {
@@ -589,21 +713,45 @@ function renderLibrary() {
     const matchQ = !q || b.title.toLowerCase().includes(q) || (b.author || '').toLowerCase().includes(q) || (b.isbn || '').includes(q);
     return matchFilter && matchQ;
   });
+  visible = sortBooks(visible);
+
+  renderFilterPills();
 
   const list = document.getElementById('book-list');
+  const grid = document.getElementById('book-grid');
   const empty = document.getElementById('lib-empty');
 
   if (visible.length === 0) {
     list.innerHTML = '';
+    grid.innerHTML = '';
+    list.style.display = 'none';
+    grid.style.display = 'none';
     empty.style.display = 'block';
     empty.textContent = books.length === 0 ? 'Your library is empty. Add some books!' : 'No books match this filter.';
     return;
   }
   empty.style.display = 'none';
 
-  list.innerHTML = visible.map(b => `
-    <div class="book-item">
+  if (libraryView === 'grid') {
+    list.style.display = 'none';
+    list.innerHTML = '';
+    grid.style.display = 'grid';
+    grid.innerHTML = visible.map(renderGridItem).join('');
+  } else {
+    grid.style.display = 'none';
+    grid.innerHTML = '';
+    list.style.display = 'flex';
+    list.innerHTML = visible.map(renderListItem).join('');
+  }
+}
 
+function renderListItem(b) {
+  const cover = b.cover_url
+    ? `<img class="book-cover" src="${esc(b.cover_url)}" alt="" loading="lazy" onerror="onCoverError(this,'${b.id}','book-cover-placeholder')" />`
+    : placeholderHTML(b, 'book-cover-placeholder');
+  return `
+    <div class="book-item">
+      ${cover}
       <div class="book-info">
         <div class="book-title" title="${esc(b.title)}">${esc(b.title)}</div>
         ${b.author ? `<div class="book-author">${esc(b.author)}</div>` : ''}
@@ -620,8 +768,38 @@ function renderLibrary() {
         </select>
         <button class="action-btn del" onclick="deleteBook('${b.id}')">Remove</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+}
+
+function renderGridItem(b) {
+  const cover = b.cover_url
+    ? `<img class="grid-cover" src="${esc(b.cover_url)}" alt="" loading="lazy" onerror="onCoverError(this,'${b.id}','grid-cover-placeholder')" />`
+    : placeholderHTML(b, 'grid-cover-placeholder');
+  return `
+    <div class="grid-item" id="grid-item-${b.id}" onclick="toggleGridItem('${b.id}')">
+      <div class="grid-cover-wrap">
+        ${cover}
+        <span class="grid-status-dot ${b.status}" title="${b.status}"></span>
+      </div>
+      <div class="grid-title" title="${esc(b.title)}">${esc(b.title)}</div>
+      ${b.author ? `<div class="grid-author">${esc(b.author)}</div>` : ''}
+      <div class="grid-actions" onclick="event.stopPropagation()">
+        <select class="status-select" onchange="updateStatus('${b.id}', this.value)">
+          <option value="unread"   ${b.status==='unread'   ?'selected':''}>Unread</option>
+          <option value="read"     ${b.status==='read'     ?'selected':''}>Read</option>
+          <option value="wishlist" ${b.status==='wishlist' ?'selected':''}>Wishlist</option>
+        </select>
+        <button class="action-btn del" onclick="deleteBook('${b.id}')">Remove</button>
+      </div>
+    </div>`;
+}
+
+function toggleGridItem(id) {
+  const el = document.getElementById('grid-item-' + id);
+  if (!el) return;
+  const wasExpanded = el.classList.contains('expanded');
+  document.querySelectorAll('.grid-item.expanded').forEach(x => x.classList.remove('expanded'));
+  if (!wasExpanded) el.classList.add('expanded');
 }
 
 function updateStats() {
@@ -777,6 +955,86 @@ async function fetchOpenLibrary(q) {
     const cover = doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null;
     return { title: doc.title || 'Unknown', author: (doc.author_name||[]).join(', ') || null, isbn, cover_url: cover, _source: 'Open Library' };
   });
+}
+
+// ── Fix missing covers ──────────────────────────────────────────
+async function bestCoverFor(q) {
+  const [g, o] = await Promise.allSettled([fetchGoogleBooks(q), fetchOpenLibrary(q)]);
+  const gList = g.status === 'fulfilled' ? g.value : [];
+  const oList = o.status === 'fulfilled' ? o.value : [];
+  // Prefer Google Books (generally sharper, more consistent covers), fall back to Open Library
+  return gList.find(x => x.cover_url) || oList.find(x => x.cover_url) || null;
+}
+
+async function runCoverFix() {
+  if (!configured) { toast('Connect Supabase first'); return; }
+
+  const btn      = document.getElementById('fixcovers-btn');
+  const progress = document.getElementById('fixcovers-progress');
+  const bar      = document.getElementById('fixcovers-bar');
+  const log      = document.getElementById('fixcovers-log');
+  const summary  = document.getElementById('fixcovers-summary');
+
+  const missing = books.filter(b => !b.cover_url);
+  if (!missing.length) { toast("No missing covers — you're all set"); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Working…';
+  progress.style.display = 'block';
+  log.innerHTML = '';
+  bar.style.width = '0%';
+  summary.textContent = `Fixing ${missing.length} book(s)…`;
+
+  let found = 0, notfound = 0;
+
+  for (let i = 0; i < missing.length; i++) {
+    const b = missing[i];
+    let match = null;
+
+    try {
+      if (b.isbn) {
+        match = await bestCoverFor('isbn:' + b.isbn);
+      }
+      if (!match) {
+        const cleanTitle = b.title.replace(/[\(（].*?[\)）]/g, '').trim();
+        const q = [cleanTitle, b.author].filter(Boolean).join(' ');
+        match = await bestCoverFor(q);
+      }
+    } catch (e) { /* fall through to not-found */ }
+
+    if (match && match.cover_url) {
+      try {
+        await sb('books?id=eq.' + b.id, {
+          method: 'PATCH',
+          body: JSON.stringify({ cover_url: match.cover_url }),
+          prefer: 'return=minimal'
+        });
+        const idx = books.findIndex(x => x.id === b.id);
+        if (idx > -1) books[idx].cover_url = match.cover_url;
+        found++;
+        log.innerHTML += `<div class="fixcovers-row ok">✓ ${esc(b.title)} — via ${esc(match._source)}</div>`;
+      } catch (e) {
+        notfound++;
+        log.innerHTML += `<div class="fixcovers-row fail">⚠ ${esc(b.title)} — found a cover but saving failed (${esc(e.message || '')})</div>`;
+      }
+    } else {
+      notfound++;
+      log.innerHTML += `<div class="fixcovers-row fail">— ${esc(b.title)} — no match found</div>`;
+    }
+
+    log.scrollTop = log.scrollHeight;
+    bar.style.width = Math.round(((i + 1) / missing.length) * 100) + '%';
+    updateStats();
+    renderLibrary();
+
+    // small delay so we don't hammer the free API tiers
+    await new Promise(r => setTimeout(r, 250));
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Scan & fix missing covers';
+  summary.textContent = `Done — ${found} cover(s) added, ${notfound} still need a manual look.`;
+  toast(`Covers fixed: ${found} found, ${notfound} not found`);
 }
 
 function addFromGoogle(data, status) {
