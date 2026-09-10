@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Standalone sitemap.xml — use this ONLY if caglarsonmez.com does not
+  already have a sitemap.xml at its root. If one already exists, don't
+  replace it — instead copy the <url> block from sitemap-entry.xml into
+  the existing file's <urlset>, and add your other pages below too.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://caglarsonmez.com/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://caglarsonmez.com/umschreibung</loc>
+    <lastmod>2026-09-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!-- Add your other existing pages here, e.g.: -->
+  <!--
+  <url>
+    <loc>https://caglarsonmez.com/library</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  -->
+</urlset>

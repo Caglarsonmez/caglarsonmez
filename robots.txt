@@ -1,0 +1,8 @@
+# If caglarsonmez.com already has a robots.txt at the site root,
+# don't replace it — just make sure it contains a Sitemap: line
+# pointing at your sitemap.xml, like the one below.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://caglarsonmez.com/sitemap.xml
