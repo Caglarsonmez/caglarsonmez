@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ehliyet Dönüşümü (Umschreibung) — Berlin Rehberi</title>
+<meta name="description" content="Türk ehliyetini Berlin'de Alman ehliyetine çevirmek isteyenler için topluluk kaynaklı adım adım rehber ve sık sorulan sorular.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE0;
+    --paper-card:#F8F6EF;
+    --paper-raised:#FFFFFF;
+    --ink:#1C1B18;
+    --ink-soft:#5B5749;
+    --ink-faint:#8B8674;
+    --route-blue:#1D4E89;
+    --route-blue-dark:#123863;
+    --warn-yellow:#E8B923;
+    --warn-yellow-ink:#4A3A05;
+    --alert-red:#B23A2F;
+    --go-green:#3F6C4C;
+    --line:#D9D3C2;
+    --line-strong:#C6BEA6;
+    --shadow: 0 1px 2px rgba(28,27,24,0.06), 0 4px 14px rgba(28,27,24,0.05);
+    --radius: 3px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter', system-ui, sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* subtle paper texture via repeating gradient */
+  body{
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(28,27,24,0.035) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  h1,h2,h3,.display{
+    font-family:'Oswald', sans-serif;
+    font-weight:600;
+    letter-spacing:0.01em;
+    color:var(--ink);
+    margin:0;
+  }
+
+  .mono{
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  a{color:var(--route-blue); text-decoration-thickness:1.5px; text-underline-offset:2px;}
+  a:hover{color:var(--route-blue-dark);}
+
+  .wrap{
+    max-width:920px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* ============ HEADER / HERO ============ */
+
+  .plate-strip{
+    background:var(--route-blue);
+    color:#fff;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.04em;
+    padding:9px 0;
+    text-align:center;
+  }
+  .plate-strip span{opacity:0.85;}
+
+  header.hero{
+    padding:64px 0 48px;
+    border-bottom:3px solid var(--ink);
+    position:relative;
+  }
+
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--route-blue-dark);
+    background:rgba(29,78,137,0.08);
+    border:1px solid rgba(29,78,137,0.25);
+    padding:5px 10px;
+    border-radius:2px;
+    margin-bottom:22px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:7px;height:7px;
+    background:var(--route-blue);
+    border-radius:50%;
+    display:inline-block;
+  }
+
+  h1.title{
+    font-size:clamp(32px, 5.2vw, 52px);
+    line-height:1.08;
+    max-width:14ch;
+    text-transform:uppercase;
+  }
+  h1.title em{
+    font-style:normal;
+    color:var(--route-blue);
+  }
+
+  .subtitle{
+    margin-top:20px;
+    font-size:17px;
+    color:var(--ink-soft);
+    max-width:56ch;
+  }
+
+  .hero-meta{
+    margin-top:28px;
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-faint);
+  }
+  .hero-meta strong{color:var(--ink-soft); font-weight:500;}
+
+  /* ============ STAT / KM SIGN STRIP ============ */
+
+  .stat-strip{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:14px;
+    margin:40px 0 0;
+  }
+  @media (max-width:680px){
+    .stat-strip{grid-template-columns:1fr;}
+  }
+  .stat-sign{
+    background:var(--route-blue);
+    color:#fff;
+    border:2px solid var(--route-blue-dark);
+    border-radius:2px;
+    padding:16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .stat-sign .num{
+    font-family:'Oswald', sans-serif;
+    font-size:28px;
+    font-weight:600;
+    line-height:1;
+  }
+  .stat-sign .lbl{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:0.03em;
+    opacity:0.88;
+    margin-top:6px;
+    display:block;
+  }
+  .stat-sign.warn{
+    background:var(--warn-yellow);
+    color:var(--warn-yellow-ink);
+    border-color:#B08D14;
+  }
+
+  /* ============ SECTION HEADERS ============ */
+
+  section{
+    padding:64px 0;
+  }
+  section + section{
+    border-top:1px solid var(--line);
+  }
+
+  .section-head{
+    margin-bottom:40px;
+  }
+  .section-kicker{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--alert-red);
+    margin-bottom:10px;
+    display:block;
+  }
+  .section-head h2{
+    font-size:clamp(26px, 3.6vw, 36px);
+    text-transform:uppercase;
+  }
+  .section-desc{
+    margin-top:14px;
+    color:var(--ink-soft);
+    max-width:60ch;
+    font-size:15.5px;
+  }
+
+  /* ============ CALLOUT (6-month rule) ============ */
+
+  .callout{
+    display:flex;
+    gap:16px;
+    background:#fff;
+    border:2px solid var(--alert-red);
+    border-radius:2px;
+    padding:20px 22px;
+    margin:36px 0;
+    box-shadow:var(--shadow);
+  }
+  .callout .icon{
+    flex:none;
+    width:40px;height:40px;
+    border-radius:50%;
+    background:var(--alert-red);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    font-size:20px;
+  }
+  .callout .body strong{display:block; font-size:15.5px; margin-bottom:4px;}
+  .callout .body p{margin:0; font-size:14.5px; color:var(--ink-soft);}
+
+  /* ============ TIMELINE ============ */
+
+  .route{
+    position:relative;
+    padding-left:64px;
+  }
+  .route::before{
+    content:"";
+    position:absolute;
+    left:23px;
+    top:6px;
+    bottom:6px;
+    width:3px;
+    background-image: repeating-linear-gradient(to bottom, var(--warn-yellow) 0 16px, transparent 16px 28px);
+  }
+
+  .step{
+    position:relative;
+    margin-bottom:34px;
+  }
+  .step:last-child{margin-bottom:0;}
+
+  .step-marker{
+    position:absolute;
+    left:-64px;
+    top:0;
+    width:48px;
+    height:38px;
+    background:var(--route-blue);
+    border:2px solid var(--route-blue-dark);
+    border-radius:2px;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    font-size:19px;
+    box-shadow:var(--shadow);
+    z-index:1;
+  }
+
+  .step-card{
+    background:var(--paper-card);
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius);
+    padding:22px 24px 20px;
+    box-shadow:var(--shadow);
+  }
+
+  .step-card h3{
+    font-size:19px;
+    text-transform:uppercase;
+    margin-bottom:4px;
+  }
+  .step-sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-faint);
+    margin-bottom:14px;
+    display:block;
+  }
+  .step-card p{
+    margin:0 0 12px;
+    font-size:15px;
+    color:var(--ink);
+  }
+  .step-card p:last-child{margin-bottom:0;}
+
+  .note{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+    padding:12px 14px;
+    border-radius:2px;
+    font-size:13.5px;
+  }
+  .note .n-icon{
+    flex:none;
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    width:20px;height:20px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:50%;
+    font-size:12px;
+  }
+  .note.tip{background:rgba(63,108,76,0.09); color:#2E4E37;}
+  .note.tip .n-icon{background:var(--go-green); color:#fff;}
+  .note.warn{background:rgba(232,185,35,0.16); color:var(--warn-yellow-ink);}
+  .note.warn .n-icon{background:var(--warn-yellow); color:var(--warn-yellow-ink);}
+  .note.caution{background:rgba(178,58,47,0.08); color:#7A281F;}
+  .note.caution .n-icon{background:var(--alert-red); color:#fff;}
+  .note strong{font-weight:600;}
+
+  /* ============ FAQ ============ */
+
+  .faq-filters{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:30px;
+  }
+  .filter-pill{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.02em;
+    padding:7px 13px;
+    border:1px solid var(--line-strong);
+    border-radius:20px;
+    background:#fff;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .filter-pill:hover{border-color:var(--route-blue);}
+  .filter-pill.active{
+    background:var(--route-blue);
+    border-color:var(--route-blue-dark);
+    color:#fff;
+  }
+
+  .faq-group{
+    margin-bottom:8px;
+  }
+  .faq-group-title{
+    font-family:'Oswald', sans-serif;
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--route-blue-dark);
+    margin:34px 0 14px;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--ink);
+  }
+  .faq-group-title:first-child{margin-top:0;}
+
+  .faq-item{
+    border-bottom:1px solid var(--line);
+  }
+  .faq-item:first-child{border-top:1px solid var(--line);}
+
+  .faq-q{
+    width:100%;
+    text-align:left;
+    background:none;
+    border:none;
+    padding:16px 2px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    cursor:pointer;
+    font-family:'Inter', sans-serif;
+    font-size:15.5px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .faq-q:hover{color:var(--route-blue-dark);}
+  .faq-q .plus{
+    flex:none;
+    font-family:'Oswald', sans-serif;
+    font-size:18px;
+    color:var(--route-blue);
+    transition:transform .2s ease;
+    line-height:1;
+    margin-top:1px;
+  }
+  .faq-item.open .faq-q .plus{transform:rotate(45deg);}
+
+  .faq-a{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .25s ease;
+  }
+  .faq-a-inner{
+    padding:0 2px 18px;
+    font-size:14.5px;
+    color:var(--ink-soft);
+    max-width:66ch;
+  }
+  .faq-a-inner p{margin:0 0 10px;}
+  .faq-a-inner p:last-child{margin-bottom:0;}
+  .faq-a-inner .verify{
+    display:inline-block;
+    margin-top:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--alert-red);
+    background:rgba(178,58,47,0.07);
+    padding:3px 8px;
+    border-radius:2px;
+  }
+  .faq-a-inner code{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    background:rgba(29,78,137,0.08);
+    padding:1px 5px;
+    border-radius:2px;
+  }
+
+  /* ============ FOOTER / DISCLAIMER ============ */
+
+  footer{
+    background:var(--ink);
+    color:#D9D3C2;
+    padding:48px 0 40px;
+  }
+  footer h4{
+    font-family:'Oswald', sans-serif;
+    text-transform:uppercase;
+    font-size:15px;
+    color:#fff;
+    margin:0 0 12px;
+  }
+  footer p{
+    font-size:13.5px;
+    color:#B5AF9C;
+    max-width:70ch;
+    margin:0 0 12px;
+  }
+  footer a{color:#F0C94A;}
+  .footer-meta{
+    margin-top:24px;
+    padding-top:20px;
+    border-top:1px solid #3A382F;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:#7C7869;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  @media (max-width:600px){
+    .route{padding-left:52px;}
+    .route::before{left:17px;}
+    .step-marker{left:-52px; width:38px; height:32px; font-size:16px;}
+    header.hero{padding:44px 0 36px;}
+    section{padding:44px 0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="plate-strip">D · BERLIN <span>— TR ↔ DE FÜHRERSCHEIN-UMSCHREIBUNG REHBERİ</span></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Deneyim Kaynaklı Rehber</span>
+    <h1 class="title">Türk Ehliyetini <em>Alman Ehliyetine</em> Çevirmek</h1>
+    <p class="subtitle">Berlin'de yaşayan ve Türkiye'den getirdiği ehliyetini Alman ehliyetine çevirmek (Umschreibung) isteyenler için adım adım yol haritası ve sık sorulan sorular. (bilgiler baglayici degildir, tavsiye niteligindedir)</p>
+    <div class="hero-meta">
+      <span><strong>Kapsam:</strong> Berlin, B sınıfı ehliyet</span>
+      <span><strong>Son güncelleme:</strong> Ağustos 2026</span>
+    </div>
+
+    <div class="stat-strip">
+      <div class="stat-sign warn">
+        <span class="num">6 AY</span>
+        <span class="lbl">TÜRK EHLİYETİYLE SÜREBİLECEĞİNİZ AZAMİ SÜRE</span>
+      </div>
+      <div class="stat-sign">
+        <span class="num">4–8 HAFTA</span>
+        <span class="lbl">BAŞVURUDAN SINAV ONAYINA TİPİK BEKLEME</span>
+      </div>
+      <div class="stat-sign">
+        <span class="num">~1.300–1.700 €</span>
+        <span class="lbl">GERÇEKÇİ TOPLAM BÜTÇE (DERS + SINAVLAR DAHİL)</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ TIMELINE ============ -->
+<section id="timeline">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="section-kicker">Yol Haritası</span>
+      <h2>Süreç Adım Adım</h2>
+      <p class="section-desc">Aşağıdaki sıra, Umschreibung sürecinin genel akışını yansıtıyor. Süreler ve ücretler zamanla değişebiliyor — kesin rakamlar için ilgili kurumun güncel bilgisini kontrol edin.</p>
+    </div>
+
+    <div class="callout">
+      <div class="icon">!</div>
+      <div class="body">
+        <strong>Neden hemen başlamalısınız</strong>
+        <p>Türk ehliyetiniz, Almanya'ya <strong>ilk giriş yaptığınız tarihten</strong> itibaren 6 ay boyunca geçerlidir — bu tarih genelde pasaportunuza vurulan giriş damgasıyla belirleniyor. Süre, Anmeldung yaptırdığınız veya Berlin'e yerleştiğiniz tarihle değil, Almanya'ya ilk ayak bastığınız tarihle başlar. Bu süre dolduğunda, dönüşüm tamamlanmamışsa artık araç kullanamazsınız. Sürecin bazı adımları (özellikle sınav randevuları) haftalarca sürebildiğinden, mümkün olan en erken zamanda başlamanız önerilir.</p>
+      </div>
+    </div>
+
+    <div class="route">
+
+      <div class="step">
+        <div class="step-marker">1</div>
+        <div class="step-card">
+          <h3>Sürücü Kursuna Kayıt Ol</h3>
+          <span class="step-sub">Fahrschule Anmeldung</span>
+          <p>Süreç bir sürücü kursuna (Fahrschule) kayıt olmakla başlıyor. Bu adım için ikamet kaydınızın (Anmeldung) Berlin'de olması şart değil; Berlin ile gerçek bir bağınız (iş yeri, kurs kaydı gibi) olması genelde yeterli.</p>
+          <div class="note tip">
+            <span class="n-icon">i</span>
+            <span><strong>İpucu:</strong> Kurs ücretleri (özellikle ders başına fiyatlar) okuldan okula ciddi şekilde değişiyor. Birkaç kurstan fiyat alın. Bazı kurslar ilkyardım eğitimini de kendileri organize ediyor — kayıt sırasında sorun.</span>
+          </div>
+          <div class="note warn">
+            <span class="n-icon">!</span>
+            <span><strong>Bilinmesi gereken:</strong> Umschreibung yapıyorsanız, sıfırdan ehliyet alanlar için zorunlu olan ders paketine (belirli sayıda teori/pratik ders) tabi değilsiniz. Ancak kursunuz yine de sınava girmeden önce belirli sayıda ders almanızı şart koşabilir — bu, kursun kendi kararıdır, yasal bir zorunluluk değildir.</span>
+          </div>
+          <div class="note caution">
+            <span class="n-icon">✕</span>
+            <span><strong>Dolandırıcılığa dikkat:</strong> Bazı kurslar; Anmeldung yardımı, uygulama erişimi, ilkyardım kursu ve belirli sayıda direksiyon dersini içeren "paket" teklifleriyle önceden toplu ödeme (peşin lump-sum) topluyor. Büyük tutarları peşin ödemekten kaçının; mümkünse ödemeyi hizmet aldıkça, aşama aşama yapın.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker">2</div>
+        <div class="step-card">
+          <h3>Göz Testi ve İlkyardım Kursu</h3>
+          <span class="step-sub">Sehtest &amp; Erste-Hilfe-Kurs</span>
+          <p>İki ayrı belgeye ihtiyacınız var: bir göz testi (Sehtest) ve bir ilkyardım kursu sertifikası (Erste-Hilfe-Kurs). Her ikisi de 2 yıl geçerli.</p>
+          <p>Göz testi çoğu gözlükçüde (ör. Fielmann, Apollo) ücretsiz yapılıyor. İlkyardım kursu ise sıklıkla kursunuz tarafından organize ediliyor; değilse Malteser gibi bağımsız kuruluşlardan da alınabilir.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker">3</div>
+        <div class="step-card">
+          <h3>Bürgeramt / Führerscheinstelle Başvurusu</h3>
+          <span class="step-sub">Umschreibung Antragı</span>
+          <p>Randevunuza şu belgelerle gidin: biyometrik fotoğraf, kimlik/oturum belgesi, Türk ehliyetiniz, ilkyardım sertifikası, göz testi sonucu ve sürücü kursu kayıt belgesi. Bu aşamada vites tercihinizi (otomatik/manuel) de belirtmeniz isteniyor.</p>
+          <div class="note tip">
+            <span class="n-icon">i</span>
+            <span><strong>Biyometrik fotoğraf:</strong> DM gibi drogeri mağazalarında hem fiziksel baskı hem de QR kodlu dijital biyometrik fotoğraf alabiliyorsunuz. Bu QR kod sistemi nispeten yeni; çoğu Bürgeramt artık QR kodu istiyor, ama yine de yanınıza fiziksel baskılı fotoğraf da almanız iyi bir yedek önlem.</span>
+          </div>
+          <div class="note caution">
+            <span class="n-icon">✕</span>
+            <span><strong>Mutlaka kontrol edin:</strong> Size verilen "Antragsbestätigung" belgesinde başvurunuzun <strong>Umschreibung</strong> (dönüşüm) olarak işlendiğinden emin olun. Nadiren de olsa yanlışlıkla "Ersterteilung" (sıfırdan başvuru) olarak kaydedilebiliyor — bu ay sonra fark edildiğinde süreci ciddi şekilde uzatıyor.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker">4</div>
+        <div class="step-card">
+          <h3>Onay Bekleme Süreci</h3>
+          <span class="step-sub">DEKRA / TÜV Bildirimi</span>
+          <p>Başvurunuz işlendikten sonra DEKRA veya TÜV'den (hangisini seçtiğinize göre) başvuru numaranızı içeren bir e-posta veya mektup alacaksınız. Bekleme süresi birkaç günden 12 haftaya kadar değişebiliyor; en sık bildirilen aralık 4–6 hafta.</p>
+          <div class="note tip">
+            <span class="n-icon">i</span>
+            <span>Bekleme uzarsa LABO'nun güncel işlem sürelerini gösteren sayfasını kontrol edebilir veya doğrudan telefonla arayabilirsiniz — bazı durumlarda e-postaya yanıt beklemek yerine aramak daha hızlı sonuç veriyor.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker">5</div>
+        <div class="step-card">
+          <h3>Teori Sınavına Hazırlık ve Sınav</h3>
+          <span class="step-sub">Theorieprüfung</span>
+          <p>Sınav ücretini yatırdıktan yaklaşık 10–14 gün sonra sınava girebilirsiniz (TÜV'de bazen daha kısa sürede mümkün oluyor). Sınav Türkçe dahil birçok dilde verilebiliyor; dil seçimi sınav yerinde yapılıyor.</p>
+          <p>Sınav 30 sorudan oluşuyor ve toplamda 10 hata puanını aşmadan geçilmesi gerekiyor.</p>
+          <div class="note warn">
+            <span class="n-icon">!</span>
+            <span>Türkçe çevirilerde nadiren hata olabiliyor. Bir soru ile Türkçe çevirisi çelişkili görünüyorsa, Almanca trafik kuralının kendisine güvenin.</span>
+          </div>
+          <div class="note tip">
+            <span class="n-icon">i</span>
+            <span><strong>Çalışma önerisi:</strong> Konuları tek tek bitirin, yanlış yaptığınız soruları işaretleyin ve tekrar tekrar çözün. Art arda birkaç deneme sınavını hatasız/az hatayla geçmeden gerçek sınava girmeyin.</span>
+          </div>
+          <div class="note tip">
+            <span class="n-icon">i</span>
+            <span><strong>Kaynaklar:</strong> Çoğu sürücü kursu, sınav sorularını çalışmak için <strong>clickclickdrive</strong> uygulamasına erişim veriyor — bu, fiilen sektör standardı haline gelmiş durumda. Ayrıca YouTube'daki <strong>Berlin Listesi</strong> kanalı, soruları tek tek çözümleriyle birlikte anlatıyor; özellikle mantığını anlamakta zorlandığınız sorular için faydalı.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker">6</div>
+        <div class="step-card">
+          <h3>Direksiyon Dersleri</h3>
+          <span class="step-sub">Praktische Fahrstunden</span>
+          <p>Yasal olarak zorunlu değil ama şiddetle tavsiye edilir. Çoğu kurs, pratik sınava girmeden önce belirli sayıda ders almanızı ister. Otomatik araçla sınava girip ehliyetinizde manuel yetkisini de korumak istiyorsanız, belirli bir süre (yaklaşık 6 ders / 480 dakika) manuel araçla ders almanız gerekiyor.</p>
+          <p>Ders ücretleri kurstan kursa büyük fark gösteriyor — sabit bir rakam vermek yanıltıcı olur, birkaç kurstan güncel fiyat alın.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker">7</div>
+        <div class="step-card">
+          <h3>Pratik Sınav</h3>
+          <span class="step-sub">Praktische Prüfung</span>
+          <p>Sınavı geçtiğinizde elinize "beyaz kağıt" (geçiş belgesi) veriliyor. Bu belge tek başına araç kullanma hakkı vermiyor — bir sonraki adım için gerekli.</p>
+          <div class="note caution">
+            <span class="n-icon">✕</span>
+            <span><strong>Bütçenizi buna göre planlayın:</strong> Kalırsanız, her yeni deneme (sınav ücreti + eşlik eden ders) toplamda yaklaşık 350–400 € tutabiliyor. Hazırlıksız girip kalmak, bir ekstra dersten çok daha pahalıya mal oluyor.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker">8</div>
+        <div class="step-card">
+          <h3>LABO'dan Ehliyeti Teslim Alma</h3>
+          <span class="step-sub">Beyaz → Pembe → Plastik Kart</span>
+          <p>Randevu ile LABO'ya gidip beyaz kağıdınızı teslim ediyor, karşılığında "pembe kağıt" (geçici ehliyet) alıyorsunuz — bu belge ile artık araç kullanabilirsiniz. Bu aşamada Türk ehliyetiniz teslim alınıyor.</p>
+          <p>Plastik kartı randevuda elden ya da postayla almayı seçebilirsiniz. Posta ile gönderim küçük bir ücrete tabi (yakl. 3–5 €) ve genelde yaklaşık 1 hafta sürüyor.</p>
+          <div class="note tip">
+            <span class="n-icon">i</span>
+            <span><strong>Bu randevuda isteyin:</strong> "Auszug aus der Führerscheindatei" belgesini talep edin. Bu belge, Türk ehliyetinizin orijinal alım tarihini gösteriyor ve bir sonraki adımda işinize yarayacak.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker">9</div>
+        <div class="step-card">
+          <h3>Sonrası: Araç Paylaşımı ve Sigorta</h3>
+          <span class="step-sub">Car-Sharing &amp; Kfz-Versicherung</span>
+          <p>Miles, Bolt gibi araç paylaşım uygulamaları, yeni Alman ehliyetinizi varsayılan olarak "acemi sürücü" (rookie) statüsünde gösteriyor — geçmiş sürüş deneyiminiz olsa bile. Uygulamanın destek biriminden bir talep açıp eski Türk ehliyetinizi ve "Auszug aus der Führerscheindatei" belgesini paylaşarak bu durumu düzelttirebilirsiniz.</p>
+          <p>Pembe kağıt bu uygulamalarda kabul edilmiyor — sadece plastik kart geldikten sonra tam erişim açılıyor.</p>
+          <p>Sigorta tarafında: Alman sigortacılar genelde Türkiye'deki sürüş geçmişinizi otomatik olarak tanımıyor, bu yüzden düşük bir no-claim sınıfından (Schadenfreiheitsklasse) başlayabilirsiniz. Birkaç sigortadan teklif almakta fayda var — fiyat farkları oldukça büyük olabiliyor.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="section-kicker">Referans</span>
+      <h2>Sık Sorulan Sorular</h2>
+      <p class="section-desc">Kategoriye göre filtreleyebilir veya tümünü görebilirsiniz. Ücret ve süre içeren cevaplar zamanla değişebilir — "güncel bilgiyi kontrol edin" notu olan yerlere dikkat edin.</p>
+    </div>
+
+    <div class="faq-filters" id="faqFilters">
+      <button class="filter-pill active" data-filter="all">Tümü</button>
+      <button class="filter-pill" data-filter="belgeler">Belgeler &amp; Başvuru</button>
+      <button class="filter-pill" data-filter="sinav">Sınavlar</button>
+      <button class="filter-pill" data-filter="vites">Vites (Otomatik/Manuel)</button>
+      <button class="filter-pill" data-filter="ucret">Ücretler</button>
+      <button class="filter-pill" data-filter="teslim">Ehliyeti Teslim Alma</button>
+      <button class="filter-pill" data-filter="sonrasi">Sonrası</button>
+      <button class="filter-pill" data-filter="ozel">Özel Durumlar</button>
+    </div>
+
+    <div id="faqList">
+
+      <div class="faq-group-title" data-group="belgeler">Belgeler &amp; Başvuru</div>
+
+      <div class="faq-item" data-cat="belgeler">
+        <button class="faq-q"><span>Bürgeramt'a giderken Berlin'de ikamet kaydım (Anmeldung) olması şart mı?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Kesin bir kural olarak sunulmasa da, pratikte Berlin ile gerçek bir bağınızı gösterebilmeniz (iş yeri, sürücü kursu kaydı gibi) genelde yeterli kabul ediliyor. Bazı üyeler ikamet kaydı Berlin dışındayken de bu şekilde başvurabildiğini bildirdi.</p>
+          <span class="verify">Bürgeramt'a göre değişebilir, önceden teyit edin</span>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="belgeler">
+        <button class="faq-q"><span>Antragsbestätigung belgemde nelere dikkat etmeliyim?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>En önemlisi: başvurunuzun <strong>Umschreibung</strong> (dönüşüm) olarak kaydedildiğinden emin olun, yanlışlıkla "Ersterteilung" (sıfırdan başvuru) yazılabiliyor. Ayrıca vites tercihinizin (otomatik/manuel) doğru işaretlendiğini kontrol edin.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="belgeler">
+        <button class="faq-q"><span>Türk ehliyetimdeki bir sınıfın (ör. D1) süresi dolmuşsa ne olur?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Süresi dolmuş bir sınıf otomatik olarak Alman ehliyetine aktarılmıyor. Bu sınıfı eklemek istiyorsanız önce Türkiye'de yenilemeniz gerekebilir. Başvurmadan önce ehliyetinizdeki tüm sınıfların güncel/geçerli olduğundan emin olun.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="belgeler">
+        <button class="faq-q"><span>İş yerim veya adresim Berlin dışındaysa sınava Berlin'de girebilir miyim?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Yetki genelde ikamet kaydınızın (Anmeldung) bağlı olduğu şehre göre belirleniyor; iş yeri gibi istisnalar bazen kabul edilse de garanti değil ve sonradan tekrar incelenebiliyor. Süreç ortasında adresiniz veya iş yeriniz değişirse, ilgili makamla iletişime geçip durumu yazılı olarak netleştirmeniz önerilir.</p>
+          <span class="verify">Duruma göre değişir, ilgili Bürgeramt/Führerscheinstelle ile teyitleşin</span>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="belgeler">
+        <button class="faq-q"><span>Bir sürücü kursu her şeyi içeren bir "paket" için önceden toplu ödeme istiyor, güvenli mi?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Dikkatli olun. Anmeldung yardımı, uygulama erişimi, ilkyardım kursu ve belirli sayıda direksiyon dersini içeren paket tekliflerle büyük tutarları peşin toplayıp sonradan sözünü tutmadan ortadan kaybolan kurslar bildirildi. Büyük tutarları tek seferde peşin ödemekten kaçının; mümkünse hizmet aldıkça aşama aşama ödeyin ve her ödeme için makbuz/fatura isteyin.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-group-title" data-group="sinav">Sınavlar</div>
+
+      <div class="faq-item" data-cat="sinav">
+        <button class="faq-q"><span>Teori sınavını Türkçe verebilir miyim?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Evet, dil seçimi sınav gününde, sınav yerinde yapılıyor — önceden bildirmenize gerek yok. Türkçe çevirilerde nadiren hata bildirildi; bir soru mantıksız veya çelişkili görünüyorsa Almanca kuralın kendisine güvenmekte fayda var.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="sinav">
+        <button class="faq-q"><span>Teori sınavı kaç sorudan oluşuyor, geçmek için ne gerekiyor?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Sınav 30 sorudan oluşuyor. Her soru kendi önem derecesine göre farklı hata puanı taşıyor; toplamda 10 hata puanını aşmamanız gerekiyor.</p>
+          <span class="verify">Resmi kaynaktan (DEKRA/TÜV) güncel kuralı teyit edin</span>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="sinav">
+        <button class="faq-q"><span>Teori sınavından kalırsam ne zaman tekrar girebilirim?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Standart bekleme süresi yaklaşık 2 hafta. Ancak kursunuz size 2 gün içinde ek teori dersi verirse (ve bunu belgelerse), genelde 3 gün gibi kısa bir süre sonra tekrar girebiliyorsunuz. Sınav ücreti her denemede tekrar ödeniyor.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="sinav">
+        <button class="faq-q"><span>Teoriyi geçtim, pratik sınav için süre sınırım var mı?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Evet — teori sınavını geçtikten sonra pratik sınavı geçmek için <strong>1 yılınız</strong> var. Bu süre içinde pratik sınavı geçemezseniz teori sınavının geçerliliği düşüyor ve süreç (yeni Bürgeramt başvurusu, yeni teori sınavı dahil) baştan başlıyor. Göz testi ve ilkyardım sertifikanız 2 yıl geçerli olduğundan genelde yeniden alınmasına gerek kalmıyor.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="sinav">
+        <button class="faq-q"><span>Teori sınavına çalışmak için hangi kaynakları önerirsiniz?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p><strong>clickclickdrive</strong> uygulaması — çoğu sürücü kursu bu uygulamaya erişim veriyor ve fiilen standart çalışma aracı haline gelmiş durumda. YouTube'daki <strong>Berlin Listesi</strong> kanalı ise soruları tek tek çözümleriyle anlatıyor, özellikle mantığını kavrayamadığınız sorular için faydalı.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="sinav">
+        <button class="faq-q"><span>DEKRA mı, TÜV mü seçmeliyim?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Sabit bir kural yok — hangi kurumun daha hızlı sınav randevusu verdiği dönemsel olarak değişiyor. Genel eğilim olarak TÜV bildirimlerini e-posta/portal üzerinden, DEKRA ise sıkça posta yoluyla da yapıyor. Kursunuza veya güncel topluluk deneyimlerine sorup o anki durumu öğrenmek en güvenilir yol.</p>
+        </div></div>
+      </div>
+	  
+      <div class="faq-item" data-cat="sinav">
+        <button class="faq-q"><span>Pratik sinavda sözlü sorular</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Pratik sinavda sürüse baslamadan önce sinav sorumlusu bir kac soru sorar. Sorulari Almanca sorar ve Almanca cevap vermenizi bekler. Olasi sorular ve yanitlarini sinav öncesinde Fahrschule'nin size bahsetmesi gerekir. Sorulari cevaplarken kusursuz bir Almanca ile cevap vermeniz beklenmez.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="sinav">
+        <button class="faq-q"><span>Pratik sinav süresince iletisim</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Pratik sinavda sürüs sirasinda sinav sorumlusu talimatlarini Almanca verir. Bu talimatlari sürüs derslerinde Fahr egitmeninin size ogretmesi beklenir. </p>
+        </div></div>
+      </div>
+
+      <div class="faq-group-title" data-group="vites">Vites: Otomatik / Manuel</div>
+
+      <div class="faq-item" data-cat="vites">
+        <button class="faq-q"><span>Ehliyetimde "78" veya "197" kodu görüyorum, bunlar ne anlama geliyor?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p><code>78</code> — yalnızca otomatik vitesli araç kullanma yetkisi anlamına geliyor.</p>
+          <p><code>197</code> — sınava otomatikle girmiş olsanız da, eğitim sırasında yeterli manuel ders (yaklaşık 6 ders / 480 dakika) aldıysanız hem otomatik hem manuel araç kullanabileceğiniz anlamına geliyor.</p>
+          <span class="verify">Tam eşik ve güncel kural için Fahrerlaubnis-Verordnung'u veya kursunuzu teyit edin</span>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="vites">
+        <button class="faq-q"><span>Otomatikle sınava girip manuel yetkisini de korumak istiyorum, ne yapmalıyım?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Kursunuza bunu baştan belirtin ve en az ~6 ders (yaklaşık 480 dakika) manuel araçla pratik ders alın. Bu, ehliyetinize 197 kodunun eklenmesini sağlıyor. Sonradan fark ederseniz, LABO'ya bir "Schlüsselzahländerung" (kod değişikliği) talebiyle başvurmanız mümkün — bu işlem yaklaşık 28 gün sürebiliyor.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-group-title" data-group="ucret">Ücretler</div>
+
+      <div class="faq-item" data-cat="ucret">
+        <button class="faq-q"><span>Toplamda ne kadar bütçe ayırmalıyım?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Nominal sınav ücretleri (teori + pratik) toplamda yaklaşık 150–160 € civarında, ancak gerçekçi bir bütçe için direksiyon derslerini ve olası ikinci bir pratik sınav denemesini de hesaba katmak gerekiyor. Genel referans: <strong>yaklaşık 1.500 €</strong> (1.300–1.700 € aralığında), hazırlıksız girip kalmaktan kaynaklanabilecek ekstra maliyetler dahil.</p>
+          <span class="verify">Kurs seçiminize ve alacağınız ders sayısına göre büyük ölçüde değişir</span>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="ucret">
+        <button class="faq-q"><span>Kesin, güncel ücretleri nereden öğrenebilirim?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Sınav ücretlerini DEKRA veya TÜV'den size gelen resmi e-posta/faturada görebilirsiniz — bu rehberde verilen rakamlar sadece yakın zamanlı referans noktalarıdır ve değişebilir. Sürücü kursu ücretleri için birkaç kurstan doğrudan teklif almanız en sağlıklısı, çünkü fiyatlar arasında ciddi fark olabiliyor.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-group-title" data-group="teslim">Ehliyeti Teslim Alma</div>
+
+      <div class="faq-item" data-cat="teslim">
+        <button class="faq-q"><span>Türk ehliyetimi ne zaman teslim ediyorum?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Güncel ve en tutarlı bilgiye göre, Türk ehliyetiniz başvuru aşamasında değil, sürecin sonunda — LABO'ya gidip beyaz kağıdınızı pembe kağıtla değiştirdiğiniz randevuda — teslim alınıyor. İki ehliyeti aynı anda elinizde tutmaya çalışmak (ör. "kaybettim" diyerek) belge sahteciliği olarak değerlendirilebilir; bundan kaçının.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="teslim">
+        <button class="faq-q"><span>Pembe kağıt ile araç kiralayabilir miyim?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Hayır. Pembe kağıt (geçici ehliyet) yasal olarak araç sürmenize izin verir, ancak Miles, Bolt gibi araç paylaşım uygulamaları bu belgeyi kabul etmiyor. Bu uygulamalarda tam erişim için plastik kartın elinize ulaşmasını beklemeniz gerekiyor.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="teslim">
+        <button class="faq-q"><span>Plastik kart ne zaman ve nasıl geliyor?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>LABO randevusunda elden teslim almayı veya postayla gönderilmesini seçebilirsiniz. Postayla gönderim küçük bir ücrete tabi (yaklaşık 3–5 €) ve genelde yaklaşık 1 hafta (birkaç iş günü) içinde elinize ulaşıyor.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-group-title" data-group="sonrasi">Sonrası</div>
+
+      <div class="faq-item" data-cat="sonrasi">
+        <button class="faq-q"><span>Araç paylaşım uygulamaları beni "acemi sürücü" olarak gösteriyor, ne yapmalıyım?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Bu, Türkiye'deki sürüş geçmişinize bakılmaksızın tüm yeni Alman ehliyeti sahiplerine varsayılan olarak uygulanıyor — kayıt sırasında otomatik olarak düzelmiyor. Çözüm: uygulamanın destek biriminden bir talep açıp eski Türk ehliyetinizi ve LABO'dan aldığınız "Auszug aus der Führerscheindatei" belgesini paylaşın. Bu belgelerle destek ekibi genelde hesabınızı acemi statüsünden çıkarıyor.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="sonrasi">
+        <button class="faq-q"><span>Sigortada neden bu kadar yüksek bir teklif aldım?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Alman sigortacılar genellikle Türkiye'deki sürüş geçmişinizi/hasarsızlık kaydınızı otomatik olarak tanımıyor; bu yüzden düşük bir no-claim sınıfından (Schadenfreiheitsklasse) başlayıp yüksek bir prim ödeyebiliyorsunuz. Birkaç sigorta şirketinden teklif almanız ve sadece fiyatı değil kapsamı da karşılaştırmanız öneriliyor — fiyat farkları oldukça büyük olabiliyor.</p>
+        </div></div>
+      </div>
+
+      <div class="faq-group-title" data-group="ozel">Özel Durumlar</div>
+
+      <div class="faq-item" data-cat="ozel">
+        <button class="faq-q"><span>Türk ehliyetimdeki adım/soyadım güncel değilse (ör. evlilik sonrası) ne yapmalıyım?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Bu durum başvuruyu karmaşıklaştırabiliyor. Randevudan önce LABO ile iletişime geçip hangi ek belgenin (ör. evlilik cüzdanı) gerekebileceğini netleştirmeniz önerilir.</p>
+          <span class="verify">Net, tek bir prosedür teyit edilemedi — önceden sorun</span>
+        </div></div>
+      </div>
+
+      <div class="faq-item" data-cat="ozel">
+        <button class="faq-q"><span>Sağlık durumum nedeniyle otomatik araç kullanma zorunluluğum var, süreç nasıl işliyor?</span><span class="plus">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">
+          <p>Doktorunuzdan durumu açıklayan bir rapor alıp Bürgeramt'a sunmanız gerekiyor. İlk gönderdiğiniz rapor yetersiz bulunup daha detaylı bir rapor istenebilir — bu normal, süreç uzasa da genelde kabul ediliyor. Raporun DEKRA/TÜV'e de iletildiğinden emin olun; bazen bu koordinasyon Bürgeramt tarafında aksayabiliyor, gerekirse kendiniz de bir kopya gönderin.</p>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <h4>Bu Rehber Hakkında</h4>
+    <p>Bu sayfa, kendi Umschreibung deneyimime dayanarak hazırlandı. Süreç, ücretler ve bekleme süreleri zamanla ve kişiden kişiye değişebiliyor — burada verilen bilgileri bir başlangıç noktası olarak kullanın, kritik kararlarda ilgili resmi kurumla (LABO, Bürgeramt, DEKRA/TÜV) teyitleşin.</p>
+    <div class="footer-meta">
+      <span>caglarsonmez.com/umschreibung</span>
+      <span>Son güncelleme: Ağustos 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // FAQ accordion
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var btn = item.querySelector('.faq-q');
+    var panel = item.querySelector('.faq-a');
+    btn.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      // close others in same visual list? keep multi-open allowed
+      if(isOpen){
+        item.classList.remove('open');
+        panel.style.maxHeight = null;
+      } else {
+        item.classList.add('open');
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+      }
+    });
+  });
+
+  // FAQ filters
+  var filterButtons = document.querySelectorAll('.filter-pill');
+  var groups = document.querySelectorAll('.faq-group-title');
+  var items = document.querySelectorAll('.faq-item');
+
+  filterButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      filterButtons.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var f = btn.getAttribute('data-filter');
+
+      items.forEach(function(item){
+        var cat = item.getAttribute('data-cat');
+        item.style.display = (f === 'all' || f === cat) ? '' : 'none';
+      });
+      groups.forEach(function(g){
+        var group = g.getAttribute('data-group');
+        if(f === 'all'){ g.style.display=''; return; }
+        g.style.display = (f === group) ? '' : 'none';
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
